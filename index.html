@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>SAV Fleet Manager - BNETD & Côte d'Ivoire</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <!-- Librairies pour export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+      integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f7fc;
+        color: #1e2a3e;
+      }
+      header {
+        background: #1e3c72;
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      header h1 {
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .btn-primary {
+        background: #ff9800;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        color: #1e2a3e;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .btn-primary:hover {
+        background: #fb8c00;
+        transform: scale(1.02);
+      }
+      .btn-secondary {
+        background: #e2e8f0;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      .btn-danger {
+        background: #c0392b;
+        color: white;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        cursor: pointer;
+      }
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: white;
+        padding: 0.5rem 1.5rem 0 1.5rem;
+        margin-top: -0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        color: #5b6e8c;
+        transition: 0.2s;
+      }
+      .tab-btn.active {
+        color: #ff9800;
+        border-bottom: 3px solid #ff9800;
+      }
+      .dashboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+      .vehicle-list-panel {
+        flex: 1.2;
+        min-width: 260px;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1rem;
+        height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
+      .vehicle-detail-panel {
+        flex: 3;
+        min-width: 320px;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
+      .search-filter {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .search-filter input,
+      .search-filter select {
+        flex: 1;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 20px;
+      }
+      .vehicles-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .vehicle-card {
+        background: #f8fafc;
+        border-left: 5px solid #ff9800;
+        padding: 0.8rem;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: 0.1s;
+      }
+      .vehicle-card.selected {
+        background: #eef2ff;
+        border-left-color: #1e3c72;
+      }
+      .vehicle-card h4 {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+      }
+      .vehicle-card p {
+        font-size: 0.8rem;
+        color: #334155;
+      }
+      .status-badge {
+        display: inline-block;
+        background: #e2e8f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        margin-top: 0.3rem;
+      }
+      .form-group {
+        margin-bottom: 1.2rem;
+      }
+      .form-group label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.3rem;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        font-family: inherit;
+      }
+      .map-container {
+        height: 250px;
+        border-radius: 16px;
+        margin: 1rem 0;
+        background: #eef2ff;
+      }
+      .accord-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.3rem;
+      }
+      .accord-btn {
+        background: #e2e8f0;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        cursor: pointer;
+      }
+      .accord-btn.active {
+        background: #ff9800;
+        color: white;
+      }
+      .action-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+        justify-content: flex-end;
+      }
+      .placeholder {
+        text-align: center;
+        margin-top: 3rem;
+        color: #5b6e8c;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .modal-content {
+        background: white;
+        margin: 10% auto;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 24px;
+        padding: 1.5rem;
+        position: relative;
+      }
+      .close {
+        position: absolute;
+        right: 1rem;
+        top: 0.5rem;
+        font-size: 1.8rem;
+        cursor: pointer;
+      }
+      .photo-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+      .photo-preview img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+      }
+      .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        text-align: center;
+      }
+      .stat-number {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #1e3c72;
+      }
+      .stat-label {
+        color: #5b6e8c;
+      }
+      .warning-badge {
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 20px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+      }
+      @media (max-width: 700px) {
+        .dashboard {
+          flex-direction: column;
+        }
+        .vehicle-list-panel,
+        .vehicle-detail-panel {
+          height: auto;
+          max-height: 50vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        <i class="fas fa-truck-moving"></i> SAV Fleet Manager - BNETD & CI
+      </h1>
+      <div style="display: flex; gap: 0.8rem; flex-wrap: wrap">
+        <button
+          id="exportExcelBtn"
+          class="btn-primary"
+          style="background: #2e7d32"
+        >
+          <i class="fas fa-file-excel"></i> Excel
+        </button>
+        <button
+          id="exportPdfBtn"
+          class="btn-primary"
+          style="background: #c62828"
+        >
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button id="addVehicleBtn" class="btn-primary">
+          <i class="fas fa-plus"></i> Nouveau
+        </button>
+      </div>
+    </header>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="list">📋 Liste & Détail</button>
+      <button class="tab-btn" data-tab="dashboard">📊 Tableau de bord</button>
+    </div>
+
+    <main class="dashboard" id="mainContainer">
+      <!-- Onglet Liste (affiché par défaut) -->
+      <div
+        id="tab-list"
+        style="display: flex; gap: 1.5rem; width: 100%; flex-wrap: wrap"
+      >
+        <aside class="vehicle-list-panel">
+          <div class="search-filter">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="🔍 Plaque, client, modèle..."
+            />
+            <select id="statusFilter">
+              <option value="all">Tous statuts</option>
+              <option value="Réceptionné">📥 Réceptionné</option>
+              <option value="Diagnostic en cours">🔧 Diagnostic</option>
+              <option value="En attente accord client">
+                ⏳ Attente accord
+              </option>
+              <option value="Travaux en cours">⚙️ Travaux en cours</option>
+              <option value="Prêt pour livraison">✅ Prêt livraison</option>
+              <option value="Livré">🏁 Livré</option>
+            </select>
+          </div>
+          <div id="vehiclesList" class="vehicles-list">Chargement...</div>
+        </aside>
+        <section class="vehicle-detail-panel">
+          <div id="detailPlaceholder" class="placeholder">
+            <i class="fas fa-car-side"></i>
+            <p>
+              Sélectionnez un véhicule pour voir ou modifier les informations
+            </p>
+          </div>
+          <div id="vehicleDetailForm" style="display: none"></div>
+        </section>
+      </div>
+
+      <!-- Onglet Tableau de bord -->
+      <div id="tab-dashboard" style="display: none; width: 100%">
+        <div class="dashboard-stats" id="statsContainer"></div>
+        <div class="dashboard-stats" id="pendingAccordContainer"></div>
+        <div
+          id="chartContainer"
+          style="
+            background: white;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-top: 1rem;
+          "
+        ></div>
+      </div>
+    </main>
+
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Nouveau véhicule</h2>
+        <form id="quickAddForm">
+          <input type="text" id="newPlaque" placeholder="Plaque *" required />
+          <input type="text" id="newClient" placeholder="Client *" required />
+          <input type="text" id="newModel" placeholder="Modèle" />
+          <button type="submit" class="btn-primary">Créer</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      // ======================== DONNÉES INITIALES BNETD ========================
+      const bnetdVehicles = [
+        {
+          dateRecep: "2026-03-25",
+          marque: "DONGFENG",
+          type: "RICH6 - ZNA",
+          immat: "75 LL 01",
+          km: "89197",
+          localite: "ABJ",
+          nInt: "2025/5/749",
+          pannes: "MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS",
+          rapportDiag: "",
+          pieces:
+            "MOTEUR+INJECTEURS+TURBO+CURROIE DIST+CURROIE ALTER+TENDEUR+ELEMENTS FILTRANTS",
+        },
+        {
+          dateRecep: "2026-03-25",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "56 LA 01",
+          km: "",
+          localite: "ABJ",
+          nInt: "",
+          pannes:
+            "MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX",
+          rapportDiag: "",
+          pieces: "MOTEUR+INJECTEURS+TURBO+CURROIE ALTER+ELEMENTS FILTRANTS",
+        },
+        {
+          dateRecep: "2026-03-25",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "862 LY 01",
+          km: "",
+          localite: "BASSAM",
+          nInt: "",
+          pannes: "MANQUE DE PUISSANCE - FUMEE NOIRE",
+          rapportDiag: "",
+          pieces: "MOTEUR+INJECTEURS+TURBO+ELEMENTS FILTRANTS",
+        },
+        {
+          dateRecep: "2026-03-26",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "2503 KL 01",
+          km: "123486",
+          localite: "ABJ",
+          nInt: "2026/6/609",
+          pannes: "PANTE MOTEUR",
+          rapportDiag:
+            "FUITE D'HUILE MOTEUR CACHE CULBITEUR+FUITE AU NIVEAU DU TURBO+CIRCUIT D'ALIMENTATION+FUITE CACHE DE DISTRIBUT",
+          pieces: "MOTEUR+INJECTEURS+TURBO+KIT DE JOINT",
+        },
+        {
+          dateRecep: "2026-03-26",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "2462 KL 01",
+          km: "136665",
+          localite: "ABJ",
+          nInt: "2026/6/802",
+          pannes: "PANTE MOTEUR",
+          rapportDiag: "PROBLEME DE DEMARRAGE",
+          pieces: "MOTEUR+INJECTEURS+TURBO+KIT DE JOINT",
+        },
+        {
+          dateRecep: "2026-03-27",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "260 LA 01",
+          km: "",
+          localite: "YAKRO",
+          nInt: "2025/8/837",
+          pannes: "PANTE MOTEUR",
+          rapportDiag: "PERTE DE PUISSANCE - PANNE MOTEUR",
+          pieces: "MOTEUR+INJECTEURS+TURBO+KIT DE JOINT",
+        },
+        {
+          dateRecep: "2026-03-31",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "63 LA 01",
+          km: "",
+          localite: "ABJ",
+          nInt: "",
+          pannes: "ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR",
+          rapportDiag: "",
+          pieces: "MOTEUR+INJECTEURS+TURBO+KIT DE JOINT",
+        },
+        {
+          dateRecep: "2026-03-31",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "41 LA 01",
+          km: "131415",
+          localite: "ABJ",
+          nInt: "2025/5/547",
+          pannes: "PANTE MOTEUR",
+          rapportDiag:
+            "BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE",
+          pieces: "MOTEUR+INJECTEURS+TURBO+ELEMENTS FILTRANTS",
+        },
+        {
+          dateRecep: "2026-04-02",
+          marque: "DONGFENG",
+          type: "RICH6 - ZNA",
+          immat: "AA-969-LR 01",
+          km: "",
+          localite: "ABJ",
+          nInt: "",
+          pannes: "REMORQUE - REMPLACEMENT MOTEUR",
+          rapportDiag: "ABSENCE DU GROUPE MOTOPROPULSEUR",
+          pieces:
+            "MOTEUR+INJECTEURS+TURBO+CURROIE DIST+CURROIE ALTER+TENDEUR+ELEMENTS FILTRANTS",
+        },
+        {
+          dateRecep: "2026-04-09",
+          marque: "CHANGAN",
+          type: "HUNTER",
+          immat: "AA-601-AF",
+          km: "",
+          localite: "ABJ",
+          nInt: "2026/6/839",
+          pannes: "PANTE MOTEUR",
+          rapportDiag: "FUITE DE CARBURANT AU NIVEAU DES INJECTEURS",
+          pieces: "MOTEUR + INJECTEURS + TURBOS",
+        },
+      ];
+
+      function getCoordinatesForLocalite(loc) {
+        switch (loc.toUpperCase()) {
+          case "ABJ":
+            return {
+              lat: 5.3364,
+              lng: -4.0267,
+              adresse: "Abidjan, Côte d'Ivoire",
+            };
+          case "YAKRO":
+            return {
+              lat: 6.8276,
+              lng: -5.2893,
+              adresse: "Yamoussoukro, Côte d'Ivoire",
+            };
+          case "BASSAM":
+            return {
+              lat: 5.2035,
+              lng: -3.7383,
+              adresse: "Grand-Bassam, Côte d'Ivoire",
+            };
+          default:
+            return {
+              lat: 5.3364,
+              lng: -4.0267,
+              adresse: "Abidjan, Côte d'Ivoire",
+            };
+        }
+      }
+
+      // ======================== APPLICATION ========================
+      let vehicles = [];
+      let selectedVehicleId = null;
+      let map = null;
+      let marker = null;
+
+      const DEFAULT_POSITION = { lat: 5.3364, lng: -4.0267 };
+      const DEFAULT_ZOOM = 12;
+
+      const vehiclesListDiv = document.getElementById("vehiclesList");
+      const detailFormDiv = document.getElementById("vehicleDetailForm");
+      const placeholderDiv = document.getElementById("detailPlaceholder");
+      const addModal = document.getElementById("addModal");
+      const searchInput = document.getElementById("searchInput");
+      const statusFilter = document.getElementById("statusFilter");
+
+      // Gestion des onglets
+      const tabList = document.getElementById("tab-list");
+      const tabDashboard = document.getElementById("tab-dashboard");
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          if (btn.dataset.tab === "list") {
+            tabList.style.display = "flex";
+            tabDashboard.style.display = "none";
+            renderVehicleList(); // rafraîchir liste
+          } else {
+            tabList.style.display = "none";
+            tabDashboard.style.display = "block";
+            renderDashboard();
+          }
+        });
+      });
+
+      function saveVehicles() {
+        localStorage.setItem("sav_vehicles", JSON.stringify(vehicles));
+      }
+
+      function loadVehicles() {
+        const data = localStorage.getItem("sav_vehicles");
+        if (data && JSON.parse(data).length > 0) {
+          vehicles = JSON.parse(data);
+          vehicles.forEach((v) => {
+            if (v.km === undefined) v.km = "";
+            if (v.nInt === undefined) v.nInt = "";
+            if (!v.photos) v.photos = [];
+            if (!v.history) v.history = [];
+          });
+          saveVehicles();
+        } else {
+          vehicles = bnetdVehicles.map((v, idx) => {
+            const coords = getCoordinatesForLocalite(v.localite);
+            return {
+              id: `bnetd-${idx}`,
+              plaque: v.immat,
+              client: "BNETD",
+              modele: `${v.marque} ${v.type}`,
+              status: "Réceptionné",
+              dateReception: v.dateRecep,
+              km: v.km,
+              nInt: v.nInt,
+              travauxClient: v.pannes,
+              travauxGarage: v.rapportDiag || "",
+              travauxEffectuer: v.pieces,
+              accordClient: "non donné",
+              position: coords,
+              adresseTexte: coords.adresse,
+              dateLivraison: null,
+              photos: [],
+              history: [
+                {
+                  date: new Date().toISOString(),
+                  action: "Création du dossier",
+                  status: "Réceptionné",
+                },
+              ],
+            };
+          });
+          saveVehicles();
+        }
+        renderVehicleList();
+      }
+
+      function addHistory(vehicleId, action, newStatus) {
+        const v = vehicles.find((v) => v.id === vehicleId);
+        if (v) {
+          if (!v.history) v.history = [];
+          v.history.push({
+            date: new Date().toISOString(),
+            action,
+            status: newStatus,
+          });
+          saveVehicles();
+        }
+      }
+
+      function renderVehicleList() {
+        const filterText = searchInput.value.toLowerCase();
+        const filterStatus = statusFilter.value;
+        let filtered = vehicles.filter(
+          (v) =>
+            (v.plaque.toLowerCase().includes(filterText) ||
+              v.client.toLowerCase().includes(filterText) ||
+              (v.modele && v.modele.toLowerCase().includes(filterText))) &&
+            (filterStatus === "all" || v.status === filterStatus),
+        );
+        if (filtered.length === 0) {
+          vehiclesListDiv.innerHTML =
+            '<div class="placeholder">Aucun véhicule trouvé</div>';
+          return;
+        }
+        vehiclesListDiv.innerHTML = filtered
+          .map(
+            (v) => `
+      <div class="vehicle-card ${selectedVehicleId === v.id ? "selected" : ""}" data-id="${v.id}">
+        <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
+        <p>${escapeHtml(v.modele || "")} • ${v.status}</p>
+        <span class="status-badge"><i class="fas fa-calendar-alt"></i> ${v.dateReception || "Date inconnue"} ${v.km ? `• ${v.km} km` : ""}</span>
+        ${v.photos && v.photos.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length} photo(s)</span>` : ""}
+      </div>
+    `,
+          )
+          .join("");
+        document
+          .querySelectorAll(".vehicle-card")
+          .forEach((card) =>
+            card.addEventListener("click", () =>
+              selectVehicle(card.dataset.id),
+            ),
+          );
+      }
+
+      function escapeHtml(str) {
+        if (!str) return "";
+        return str.replace(
+          /[&<>]/g,
+          (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m],
+        );
+      }
+
+      function selectVehicle(id) {
+        selectedVehicleId = id;
+        const vehicle = vehicles.find((v) => v.id === id);
+        if (!vehicle) return;
+        renderVehicleList();
+        showDetailForm(vehicle);
+      }
+
+      function showDetailForm(vehicle) {
+        placeholderDiv.style.display = "none";
+        detailFormDiv.style.display = "block";
+        const statusOptions = [
+          "Réceptionné",
+          "Diagnostic en cours",
+          "En attente accord client",
+          "Travaux en cours",
+          "Prêt pour livraison",
+          "Livré",
+        ];
+        const accordValue = vehicle.accordClient || "non donné";
+        const photosHtml = (vehicle.photos || [])
+          .map(
+            (photo, idx) =>
+              `<img src="${photo}" style="max-width:100px; max-height:100px; margin:5px; border-radius:8px;">`,
+          )
+          .join("");
+        detailFormDiv.innerHTML = `
+      <h2><i class="fas fa-car"></i> ${escapeHtml(vehicle.plaque)} - ${escapeHtml(vehicle.client)}</h2>
+      <div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map((s) => `<option value="${s}" ${vehicle.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>
+      <div class="form-group"><label>Date réception</label><input type="date" id="detailDateReception" value="${vehicle.dateReception || ""}"></div>
+      <div class="form-group"><label>Kilométrage</label><input type="text" id="detailKm" value="${escapeHtml(vehicle.km || "")}"></div>
+      <div class="form-group"><label>N° Interne</label><input type="text" id="detailNInt" value="${escapeHtml(vehicle.nInt || "")}"></div>
+      <div class="form-group"><label>Travaux constatés par le client</label><textarea id="detailTravauxClient" rows="2">${escapeHtml(vehicle.travauxClient || "")}</textarea></div>
+      <div class="form-group"><label>Travaux constatés par le garage</label><textarea id="detailTravauxGarage" rows="2">${escapeHtml(vehicle.travauxGarage || "")}</textarea></div>
+      <div class="form-group"><label>Travaux à effectuer</label><textarea id="detailTravauxEffectuer" rows="2">${escapeHtml(vehicle.travauxEffectuer || "")}</textarea></div>
+      <div class="form-group"><label>Accord client</label><div class="accord-buttons">
+        <button type="button" class="accord-btn ${accordValue === "non donné" ? "active" : ""}" data-accord="non donné">❌ Non donné</button>
+        <button type="button" class="accord-btn ${accordValue === "accord partiel" ? "active" : ""}" data-accord="accord partiel">⚠️ Partiel</button>
+        <button type="button" class="accord-btn ${accordValue === "accord donné" ? "active" : ""}" data-accord="accord donné">✅ Accord donné</button>
+      </div></div>
+      <div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
+      <div class="form-group"><label>Position</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button><input type="text" id="detailAdresse" placeholder="Adresse" value="${escapeHtml(vehicle.adresseTexte || "")}"></div>
+      <div class="form-group"><label>Date livraison</label><input type="date" id="detailDateLivraison" value="${vehicle.dateLivraison || ""}"></div>
+      <div class="form-group"><label>Historique</label><div style="background:#f1f5f9; border-radius:12px; padding:0.5rem; max-height:150px; overflow-y:auto;">${(vehicle.history || []).map((h) => `<div><small>${new Date(h.date).toLocaleString()} : ${h.action} (${h.status})</small></div>`).join("")}</div></div>
+      <div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger"><i class="fas fa-trash"></i> Supprimer</button><button id="saveDetailBtn" class="btn-primary"><i class="fas fa-save"></i> Enregistrer</button></div>
+    `;
+        setTimeout(() => initMap(vehicle.position), 100);
+        document.querySelectorAll(".accord-btn").forEach((btn) =>
+          btn.addEventListener("click", function () {
+            document
+              .querySelectorAll(".accord-btn")
+              .forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
+          }),
+        );
+        document
+          .getElementById("saveDetailBtn")
+          .addEventListener("click", () => saveVehicleDetails(vehicle.id));
+        document
+          .getElementById("deleteVehicleBtn")
+          .addEventListener("click", () => deleteVehicle(vehicle.id));
+        document
+          .getElementById("getCurrentPosBtn")
+          .addEventListener("click", () =>
+            getCurrentLocationForVehicle(vehicle.id),
+          );
+        const photoUpload = document.getElementById("photoUpload");
+        if (photoUpload)
+          photoUpload.addEventListener("change", (e) =>
+            handlePhotoUpload(vehicle.id, e.target.files),
+          );
+      }
+
+      function handlePhotoUpload(vehicleId, files) {
+        const vehicle = vehicles.find((v) => v.id === vehicleId);
+        if (!vehicle) return;
+        if (!vehicle.photos) vehicle.photos = [];
+        Array.from(files).forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            vehicle.photos.push(e.target.result);
+            saveVehicles();
+            // rafraîchir l'affichage des photos
+            const previewDiv = document.getElementById("photoPreview");
+            if (previewDiv) {
+              const img = document.createElement("img");
+              img.src = e.target.result;
+              img.style.maxWidth = "80px";
+              img.style.maxHeight = "80px";
+              img.style.margin = "5px";
+              img.style.borderRadius = "8px";
+              previewDiv.appendChild(img);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function initMap(position) {
+        if (map) map.remove();
+        const lat = position?.lat ?? DEFAULT_POSITION.lat;
+        const lng = position?.lng ?? DEFAULT_POSITION.lng;
+        map = L.map("mapContainer").setView([lat, lng], DEFAULT_ZOOM);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap",
+        }).addTo(map);
+        if (marker) marker.remove();
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        marker.on("dragend", () =>
+          updateVehiclePosition(selectedVehicleId, marker.getLatLng()),
+        );
+      }
+      function updateVehiclePosition(vehicleId, coords) {
+        const vehicle = vehicles.find((v) => v.id === vehicleId);
+        if (vehicle) {
+          vehicle.position = { lat: coords.lat, lng: coords.lng };
+          saveVehicles();
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18`,
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.display_name) {
+                vehicle.adresseTexte = data.display_name.substring(0, 100);
+                const adr = document.getElementById("detailAdresse");
+                if (adr) adr.value = vehicle.adresseTexte;
+                saveVehicles();
+              }
+            })
+            .catch(() => {});
+        }
+      }
+      function getCurrentLocationForVehicle(vehicleId) {
+        if (navigator.geolocation)
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const coords = {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              };
+              updateVehiclePosition(vehicleId, coords);
+              if (marker) marker.setLatLng(coords);
+              if (map) map.setView([coords.lat, coords.lng], DEFAULT_ZOOM);
+            },
+            () => alert("Géolocalisation refusée"),
+          );
+        else alert("Non supporté");
+      }
+      function saveVehicleDetails(vehicleId) {
+        const v = vehicles.find((v) => v.id === vehicleId);
+        if (!v) return;
+        const oldStatus = v.status;
+        v.status = document.getElementById("detailStatus").value;
+        v.dateReception = document.getElementById("detailDateReception").value;
+        v.km = document.getElementById("detailKm").value;
+        v.nInt = document.getElementById("detailNInt").value;
+        v.travauxClient = document.getElementById("detailTravauxClient").value;
+        v.travauxGarage = document.getElementById("detailTravauxGarage").value;
+        v.travauxEffectuer = document.getElementById(
+          "detailTravauxEffectuer",
+        ).value;
+        const activeAccord =
+          document.querySelector(".accord-btn.active")?.dataset.accord;
+        if (activeAccord) v.accordClient = activeAccord;
+        v.adresseTexte = document.getElementById("detailAdresse").value;
+        v.dateLivraison = document.getElementById("detailDateLivraison").value;
+        if (v.status === "Livré" && !v.dateLivraison)
+          v.dateLivraison = new Date().toISOString().slice(0, 10);
+        if (oldStatus !== v.status)
+          addHistory(
+            v.id,
+            `Changement de statut : ${oldStatus} → ${v.status}`,
+            v.status,
+          );
+        saveVehicles();
+        renderVehicleList();
+        alert("Enregistré");
+      }
+      function deleteVehicle(id) {
+        if (confirm("Supprimer ?")) {
+          vehicles = vehicles.filter((v) => v.id !== id);
+          if (selectedVehicleId === id) {
+            selectedVehicleId = null;
+            detailFormDiv.style.display = "none";
+            placeholderDiv.style.display = "block";
+          }
+          saveVehicles();
+          renderVehicleList();
+        }
+      }
+      function addVehicle(plaque, client, modele) {
+        const newId = Date.now().toString();
+        vehicles.push({
+          id: newId,
+          plaque: plaque.toUpperCase(),
+          client,
+          modele,
+          status: "Réceptionné",
+          dateReception: new Date().toISOString().slice(0, 10),
+          km: "",
+          nInt: "",
+          travauxClient: "",
+          travauxGarage: "",
+          travauxEffectuer: "",
+          accordClient: "non donné",
+          position: { ...DEFAULT_POSITION },
+          adresseTexte: "Abidjan, Côte d'Ivoire",
+          dateLivraison: null,
+          photos: [],
+          history: [
+            {
+              date: new Date().toISOString(),
+              action: "Création du dossier",
+              status: "Réceptionné",
+            },
+          ],
+        });
+        saveVehicles();
+        renderVehicleList();
+        selectVehicle(newId);
+      }
+
+      // Tableau de bord
+      function renderDashboard() {
+        const statsContainer = document.getElementById("statsContainer");
+        const pendingContainer = document.getElementById(
+          "pendingAccordContainer",
+        );
+        const chartContainer = document.getElementById("chartContainer");
+        const total = vehicles.length;
+        const statusCount = {};
+        vehicles.forEach((v) => {
+          statusCount[v.status] = (statusCount[v.status] || 0) + 1;
+        });
+        const avgDays = vehicles
+          .filter((v) => v.dateReception)
+          .map((v) => {
+            const reception = new Date(v.dateReception);
+            const today = new Date();
+            return Math.floor((today - reception) / (1000 * 60 * 60 * 24));
+          });
+        const avgDelay = avgDays.length
+          ? (avgDays.reduce((a, b) => a + b, 0) / avgDays.length).toFixed(0)
+          : 0;
+        const overdue = vehicles.filter(
+          (v) =>
+            v.status !== "Livré" &&
+            new Date(v.dateReception) <
+              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        ).length;
+        statsContainer.innerHTML = `
+      <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total véhicules</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["Réceptionné"] || 0}</div><div class="stat-label">En réception</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["Diagnostic en cours"] || 0}</div><div class="stat-label">Diagnostic</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["En attente accord client"] || 0}</div><div class="stat-label">Attente accord</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["Travaux en cours"] || 0}</div><div class="stat-label">Travaux en cours</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["Prêt pour livraison"] || 0}</div><div class="stat-label">Prêt livraison</div></div>
+      <div class="stat-card"><div class="stat-number">${statusCount["Livré"] || 0}</div><div class="stat-label">Livrés</div></div>
+      <div class="stat-card"><div class="stat-number">${avgDelay}</div><div class="stat-label">Âge moyen (jours)</div></div>
+      <div class="stat-card"><div class="stat-number">${overdue}</div><div class="stat-label">En retard (>7j)</div></div>
+    `;
+        const pendingAccord = vehicles.filter(
+          (v) => v.accordClient === "non donné" && v.status !== "Livré",
+        );
+        pendingContainer.innerHTML = `<div class="stat-card" style="grid-column: span 2;"><div class="stat-label">⚠️ Accords clients en attente (${pendingAccord.length})</div><ul>${pendingAccord.map((v) => `<li>${v.plaque} - ${v.client}</li>`).join("")}</ul></div>`;
+        // Graphique simple en texte
+        let chartHtml =
+          '<h3>Répartition par statut</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">';
+        for (let [status, count] of Object.entries(statusCount)) {
+          const percent = ((count / total) * 100).toFixed(0);
+          chartHtml += `<div style="background:#ff9800; width:${percent * 3}px; padding:5px; color:white; border-radius:8px; text-align:center;">${status} (${count})</div>`;
+        }
+        chartHtml += "</div>";
+        chartContainer.innerHTML = chartHtml;
+      }
+
+      // EXPORT EXCEL
+      function exportToExcel() {
+        const dataToExport = vehicles.map((v) => ({
+          Plaque: v.plaque,
+          Client: v.client,
+          Modèle: v.modele,
+          Statut: v.status,
+          "Date réception": v.dateReception,
+          Kilométrage: v.km,
+          "N° Interne": v.nInt,
+          "Travaux client": v.travauxClient,
+          "Travaux garage": v.travauxGarage,
+          "Travaux à effectuer": v.travauxEffectuer,
+          "Accord client": v.accordClient,
+          Localisation: v.adresseTexte,
+          "Date livraison": v.dateLivraison || "",
+        }));
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Suivi_Véhicules");
+        XLSX.writeFile(
+          wb,
+          `suivi_vehicules_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        );
+      }
+
+      function exportToPDF() {
+        const element = document.createElement("div");
+        element.style.padding = "20px";
+        element.style.fontFamily = "Arial, sans-serif";
+        let html = `<h2>SUIVI DES VÉHICULES - BNETD / GARAGE</h2><p>Export du ${new Date().toLocaleString()}</p><table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">`;
+        html += `<thead><tr style="background:#1e3c72; color:white;"><th>Plaque</th><th>Client</th><th>Modèle</th><th>Statut</th><th>Km</th><th>Travaux client</th><th>Pièces</th><th>Accord</th></tr></thead><tbody>`;
+        vehicles.forEach((v) => {
+          html += `<tr><td>${v.plaque}</td><td>${v.client}</td><td>${v.modele}</td><td>${v.status}</td><td>${v.km || ""}</td><td>${(v.travauxClient || "").substring(0, 60)}</td><td>${(v.travauxEffectuer || "").substring(0, 60)}</td><td>${v.accordClient}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+        element.innerHTML = html;
+        document.body.appendChild(element);
+        html2pdf()
+          .from(element)
+          .set({
+            margin: 0.5,
+            filename: `suivi_vehicules_${new Date().toISOString().slice(0, 10)}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: "in", format: "a4", orientation: "landscape" },
+          })
+          .save()
+          .then(() => element.remove());
+      }
+
+      // Événements UI
+      document.getElementById("addVehicleBtn").onclick = () =>
+        (addModal.style.display = "block");
+      document.querySelector(".close").onclick = () =>
+        (addModal.style.display = "none");
+      window.onclick = (e) => {
+        if (e.target === addModal) addModal.style.display = "none";
+      };
+      document.getElementById("quickAddForm").onsubmit = (e) => {
+        e.preventDefault();
+        const plaque = document.getElementById("newPlaque").value.trim();
+        const client = document.getElementById("newClient").value.trim();
+        const modele = document.getElementById("newModel").value.trim();
+        if (!plaque || !client) return alert("Plaque et client requis");
+        addVehicle(plaque, client, modele);
+        addModal.style.display = "none";
+        document.getElementById("quickAddForm").reset();
+      };
+      searchInput.addEventListener("input", renderVehicleList);
+      statusFilter.addEventListener("change", renderVehicleList);
+      document
+        .getElementById("exportExcelBtn")
+        .addEventListener("click", exportToExcel);
+      document
+        .getElementById("exportPdfBtn")
+        .addEventListener("click", exportToPDF);
+
+      loadVehicles();
+    </script>
+  </body>
+</html>
