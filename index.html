@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>NTR-App - BNETD </title>
+  <title> APPLICATION BY NTR </title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -49,6 +49,7 @@
     .stat-card { background: white; border-radius: 20px; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
     .stat-number { font-size: 2.2rem; font-weight: bold; color: #1e3c72; }
     .stat-label { color: #5b6e8c; }
+    .pending-list { max-height: 300px; overflow-y: auto; text-align: left; margin-top: 0.5rem; }
     @media (max-width: 700px) { .dashboard { flex-direction: column; } .vehicle-list-panel, .vehicle-detail-panel { height: auto; max-height: 50vh; } }
   </style>
 </head>
@@ -56,9 +57,11 @@
 <header>
   <h1><i class="fas fa-truck-moving"></i> NTR-App - BNETD </h1>
   <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-    <button id="exportExcelBtn" class="btn-primary" style="background:#2e7d32;"><i class="fas fa-file-excel"></i> Excel (format BNETD)</button>
+    <button id="exportExcelBtn" class="btn-primary" style="background:#2e7d32;"><i class="fas fa-file-excel"></i> Excel</button>
     <button id="exportPdfBtn" class="btn-primary" style="background:#c62828;"><i class="fas fa-file-pdf"></i> PDF</button>
-    <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau véhicule</button>
+    <button id="backupDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Sauvegarder</button>
+    <button id="restoreDataBtn" class="btn-secondary"><i class="fas fa-upload"></i> Restaurer</button>
+    <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
   </div>
 </header>
 <div class="tabs">
@@ -108,246 +111,317 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // ====================== DONNÉES BNETD (47 véhicules) ======================
-  const bnetdRaw = [
-    { nb:1, dateCreation:"2026-05-06 09:08:52", dateLivraison:"", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:2, dateCreation:"2026-05-05 10:24:40", dateLivraison:"", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:3, dateCreation:"2026-04-28 16:58:50", dateLivraison:"", immat:"3235KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT 1" },
-    { nb:4, dateCreation:"2026-04-28 14:50:06", dateLivraison:"", immat:"41LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport:"BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:5, dateCreation:"2026-04-28 14:40:37", dateLivraison:"", immat:"AA969LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:6, dateCreation:"2026-04-25 12:32:17", dateLivraison:"", immat:"AA829VZ", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:7, dateCreation:"2026-04-25 12:27:33", dateLivraison:"", immat:"AA677EY", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:8, dateCreation:"2026-04-25 12:22:43", dateLivraison:"", immat:"855LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:9, dateCreation:"2026-04-25 12:19:04", dateLivraison:"", immat:"2458KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:10, dateCreation:"2026-04-25 10:46:39", dateLivraison:"", immat:"38LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:11, dateCreation:"2026-04-25 09:17:09", dateLivraison:"", immat:"2502KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:12, dateCreation:"2026-04-24 08:40:03", dateLivraison:"", immat:"AA601AF", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:13, dateCreation:"2026-04-23 13:43:35", dateLivraison:"", immat:"5897HF01", marque:"TOYOTA", modele:"HILUX", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT 1" },
-    { nb:14, dateCreation:"2026-04-23 13:21:34", dateLivraison:"", immat:"6763JE01", marque:"MITSUBISHI", modele:"L200", pannes:"FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport:"MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces:"MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", statut:"", positionGeo:"DEPOT 2" },
-    { nb:15, dateCreation:"2026-04-23 13:12:31", dateLivraison:"", immat:"58LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", statut:"", positionGeo:"DEPOT 2" },
-    { nb:16, dateCreation:"2026-04-21 17:14:21", dateLivraison:"", immat:"64LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:17, dateCreation:"2026-04-21 14:36:31", dateLivraison:"", immat:"221LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:18, dateCreation:"2026-04-20 14:39:31", dateLivraison:"", immat:"2296KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:19, dateCreation:"2026-04-16 15:53:20", dateLivraison:"", immat:"AA153PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:20, dateCreation:"2026-04-16 12:36:47", dateLivraison:"", immat:"2309KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:21, dateCreation:"2026-04-07 15:08:33", dateLivraison:"", immat:"AA248SX", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:22, dateCreation:"2026-04-07 12:40:54", dateLivraison:"", immat:"7887JT01", marque:"BMW", modele:"520I", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:23, dateCreation:"2026-04-02 16:52:19", dateLivraison:"", immat:"AA223LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:24, dateCreation:"2026-04-02 16:46:01", dateLivraison:"", immat:"AA285AL", marque:"FORD", modele:"Territory", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:25, dateCreation:"2026-04-01 16:57:21", dateLivraison:"", immat:"2303KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:26, dateCreation:"2026-04-01 16:53:25", dateLivraison:"", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:27, dateCreation:"2026-04-01 11:47:26", dateLivraison:"", immat:"2910KB01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:28, dateCreation:"2026-04-01 09:11:21", dateLivraison:"", immat:"94LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:29, dateCreation:"2026-03-31 12:49:13", dateLivraison:"", immat:"AA175PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:30, dateCreation:"2026-03-30 08:51:15", dateLivraison:"", immat:"1922LZ01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:31, dateCreation:"2026-03-27 16:28:36", dateLivraison:"", immat:"AA986PF", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:32, dateCreation:"2026-03-27 16:22:04", dateLivraison:"", immat:"AA678BX", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:33, dateCreation:"2026-03-27 12:31:21", dateLivraison:"", immat:"260LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:34, dateCreation:"2026-03-26 16:40:27", dateLivraison:"", immat:"2462KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", statut:"", positionGeo:"DEPOT 2" },
-    { nb:35, dateCreation:"2026-03-26 15:44:57", dateLivraison:"", immat:"2503KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport:"SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", statut:"", positionGeo:"DEPOT 2" },
-    { nb:36, dateCreation:"2026-03-25 17:12:37", dateLivraison:"", immat:"862LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - FUMEE NOIRE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", statut:"", positionGeo:"DEPOT 2" },
-    { nb:37, dateCreation:"2026-03-25 17:09:33", dateLivraison:"", immat:"75LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"DIAGNOSTIC", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:38, dateCreation:"2026-03-25 15:08:06", dateLivraison:"", immat:"56LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces:"MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", statut:"", positionGeo:"DEPOT AEROPORT" },
-    { nb:39, dateCreation:"2026-03-25 09:19:26", dateLivraison:"", immat:"AA445CA", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:40, dateCreation:"2026-03-25 09:15:34", dateLivraison:"", immat:"AA150CB", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:41, dateCreation:"2026-03-25 09:09:19", dateLivraison:"", immat:"212JJ01", marque:"RENAULT", modele:"LOGAN", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:42, dateCreation:"2026-03-25 09:04:39", dateLivraison:"", immat:"1207JP01", marque:"RENAULT", modele:"DUSTER", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"" },
-    { nb:43, dateCreation:"2026-05-12 09:04:39", dateLivraison:"", immat:"AA933VZ", marque:"DONGFENG", modele:"RICH6 ZNA", pannes:"", rapport:"", pieces:"", statut:"", positionGeo:"UNITED MOTORS" },
-    { nb:44, dateCreation:"2026-05-13 00:00:00", dateLivraison:"", immat:"63LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", statut:"", positionGeo:"" },
-    { nb:45, dateCreation:"2026-05-19 00:00:00", dateLivraison:"", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR", pieces:"MOTEUR + TURBO", statut:"", positionGeo:"GARAGE 2" },
-    { nb:46, dateCreation:"2026-05-20 00:00:00", dateLivraison:"", immat:"2667KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR - VISTE TECHNIQUE", pieces:"", statut:"", positionGeo:"DEPOT 1" },
-    { nb:47, dateCreation:"2026-06-01 00:00:00", dateLivraison:"", immat:"AA609VE", marque:"MITSUBISHI", modele:"L200", pannes:"PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport:"", pieces:"", statut:"", positionGeo:"GARAGE 2" }
-  ];
+// ======================== DONNÉES BNETD (47 véhicules) ========================
+const bnetdRaw = [
+  { nb:1, dateCreation:"2026-05-06 09:08:52", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:2, dateCreation:"2026-05-05 10:24:40", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:3, dateCreation:"2026-04-28 16:58:50", immat:"3235KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:4, dateCreation:"2026-04-28 14:50:06", immat:"41LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport:"BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:5, dateCreation:"2026-04-28 14:40:37", immat:"AA969LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:6, dateCreation:"2026-04-25 12:32:17", immat:"AA829VZ", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:7, dateCreation:"2026-04-25 12:27:33", immat:"AA677EY", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:8, dateCreation:"2026-04-25 12:22:43", immat:"855LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:9, dateCreation:"2026-04-25 12:19:04", immat:"2458KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:10, dateCreation:"2026-04-25 10:46:39", immat:"38LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:11, dateCreation:"2026-04-25 09:17:09", immat:"2502KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:12, dateCreation:"2026-04-24 08:40:03", immat:"AA601AF", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT AEROPORT" },
+  { nb:13, dateCreation:"2026-04-23 13:43:35", immat:"5897HF01", marque:"TOYOTA", modele:"HILUX", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:14, dateCreation:"2026-04-23 13:21:34", immat:"6763JE01", marque:"MITSUBISHI", modele:"L200", pannes:"FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport:"MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces:"MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", positionGeo:"DEPOT 2" },
+  { nb:15, dateCreation:"2026-04-23 13:12:31", immat:"58LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT 2" },
+  { nb:16, dateCreation:"2026-04-21 17:14:21", immat:"64LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:17, dateCreation:"2026-04-21 14:36:31", immat:"221LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:18, dateCreation:"2026-04-20 14:39:31", immat:"2296KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:19, dateCreation:"2026-04-16 15:53:20", immat:"AA153PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:20, dateCreation:"2026-04-16 12:36:47", immat:"2309KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:21, dateCreation:"2026-04-07 15:08:33", immat:"AA248SX", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:22, dateCreation:"2026-04-07 12:40:54", immat:"7887JT01", marque:"BMW", modele:"520I", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:23, dateCreation:"2026-04-02 16:52:19", immat:"AA223LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:24, dateCreation:"2026-04-02 16:46:01", immat:"AA285AL", marque:"FORD", modele:"Territory", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:25, dateCreation:"2026-04-01 16:57:21", immat:"2303KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:26, dateCreation:"2026-04-01 16:53:25", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:27, dateCreation:"2026-04-01 11:47:26", immat:"2910KB01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:28, dateCreation:"2026-04-01 09:11:21", immat:"94LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:29, dateCreation:"2026-03-31 12:49:13", immat:"AA175PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:30, dateCreation:"2026-03-30 08:51:15", immat:"1922LZ01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:31, dateCreation:"2026-03-27 16:28:36", immat:"AA986PF", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:32, dateCreation:"2026-03-27 16:22:04", immat:"AA678BX", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:33, dateCreation:"2026-03-27 12:31:21", immat:"260LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT AEROPORT" },
+  { nb:34, dateCreation:"2026-03-26 16:40:27", immat:"2462KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:35, dateCreation:"2026-03-26 15:44:57", immat:"2503KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport:"SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:36, dateCreation:"2026-03-25 17:12:37", immat:"862LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - FUMEE NOIRE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT 2" },
+  { nb:37, dateCreation:"2026-03-25 17:09:33", immat:"75LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"DIAGNOSTIC", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:38, dateCreation:"2026-03-25 15:08:06", immat:"56LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces:"MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:39, dateCreation:"2026-03-25 09:19:26", immat:"AA445CA", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:40, dateCreation:"2026-03-25 09:15:34", immat:"AA150CB", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:41, dateCreation:"2026-03-25 09:09:19", immat:"212JJ01", marque:"RENAULT", modele:"LOGAN", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:42, dateCreation:"2026-03-25 09:04:39", immat:"1207JP01", marque:"RENAULT", modele:"DUSTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:43, dateCreation:"2026-05-12 09:04:39", immat:"AA933VZ", marque:"DONGFENG", modele:"RICH6 ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"UNITED MOTORS" },
+  { nb:44, dateCreation:"2026-05-13 00:00:00", immat:"63LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"" },
+  { nb:45, dateCreation:"2026-05-19 00:00:00", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR", pieces:"MOTEUR + TURBO", positionGeo:"GARAGE 2" },
+  { nb:46, dateCreation:"2026-05-20 00:00:00", immat:"2667KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR - VISTE TECHNIQUE", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:47, dateCreation:"2026-06-01 00:00:00", immat:"AA609VE", marque:"MITSUBISHI", modele:"L200", pannes:"PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport:"", pieces:"", positionGeo:"GARAGE 2" }
+];
 
-  // Conversion pour l'application
-  function getCoordFromPositionGeo(pos) {
-    if (!pos) return { lat:5.3364, lng:-4.0267, adresse:"Abidjan" };
-    const lower = pos.toLowerCase();
-    if (lower.includes("aeroport")) return { lat:5.2614, lng:-3.9268, adresse:"Aéroport d'Abidjan" };
-    if (lower.includes("depot 1")) return { lat:5.3364, lng:-4.0267, adresse:"Dépôt 1, Abidjan" };
-    if (lower.includes("depot 2")) return { lat:5.3411, lng:-4.0211, adresse:"Dépôt 2, Abidjan" };
-    if (lower.includes("garage 2")) return { lat:5.3497, lng:-4.0161, adresse:"Garage 2, Abidjan" };
-    if (lower.includes("united motors")) return { lat:5.3542, lng:-4.0089, adresse:"United Motors, Abidjan" };
-    return { lat:5.3364, lng:-4.0267, adresse:pos || "Abidjan" };
-  }
+function getCoordFromPositionGeo(pos) {
+  if (!pos) return { lat:5.3364, lng:-4.0267, adresse:"Abidjan" };
+  const lower = pos.toLowerCase();
+  if (lower.includes("aeroport")) return { lat:5.2614, lng:-3.9268, adresse:"Aéroport d'Abidjan" };
+  if (lower.includes("depot 1")) return { lat:5.3364, lng:-4.0267, adresse:"Dépôt 1, Abidjan" };
+  if (lower.includes("depot 2")) return { lat:5.3411, lng:-4.0211, adresse:"Dépôt 2, Abidjan" };
+  if (lower.includes("garage 2")) return { lat:5.3497, lng:-4.0161, adresse:"Garage 2, Abidjan" };
+  if (lower.includes("united motors")) return { lat:5.3542, lng:-4.0089, adresse:"United Motors, Abidjan" };
+  return { lat:5.3364, lng:-4.0267, adresse:pos || "Abidjan" };
+}
 
-  let vehicles = [];
-  let selectedVehicleId = null;
-  let map = null, marker = null;
-  const DEFAULT_POSITION = { lat:5.3364, lng:-4.0267 };
-  const DEFAULT_ZOOM = 12;
-  const vehiclesListDiv = document.getElementById('vehiclesList');
-  const detailFormDiv = document.getElementById('vehicleDetailForm');
-  const placeholderDiv = document.getElementById('detailPlaceholder');
-  const addModal = document.getElementById('addModal');
-  const searchInput = document.getElementById('searchInput');
-  const statusFilter = document.getElementById('statusFilter');
+// ======================== APPLICATION ========================
+let vehicles = [];
+let selectedVehicleId = null;
+let map = null, marker = null;
+const DEFAULT_POSITION = { lat:5.3364, lng:-4.0267 };
+const DEFAULT_ZOOM = 12;
 
-  function saveVehicles() { localStorage.setItem('sav_vehicles', JSON.stringify(vehicles)); }
-  function loadVehicles() {
-    const data = localStorage.getItem('sav_vehicles');
-    if (data && JSON.parse(data).length > 0) {
-      vehicles = JSON.parse(data);
-      vehicles.forEach(v => { if (!v.photos) v.photos=[]; if (!v.history) v.history=[]; if (v.km===undefined) v.km=""; if (v.nInt===undefined) v.nInt=""; });
-      saveVehicles();
-    } else {
-      vehicles = bnetdRaw.map((row, idx) => {
-        const pos = getCoordFromPositionGeo(row.positionGeo);
-        return {
-          id: `bnetd_${idx}`,
-          nb: row.nb,
-          client: "BNETD",
-          dateCreation: row.dateCreation,
-          dateLivraison: row.dateLivraison || "",
-          plaque: row.immat,
-          marque: row.marque,
-          modele: row.modele,
-          travauxClient: row.pannes,
-          rapportDiagnostic: row.rapport,
-          pieces: row.pieces,
-          statut: row.statut || "Réceptionné",
-          positionGeo: row.positionGeo,
-          position: pos,
-          adresseTexte: pos.adresse,
-          photos: [],
-          history: [{ date: new Date().toISOString(), action: "Création depuis fichier BNETD", status: "Réceptionné" }]
-        };
-      });
-      saveVehicles();
-    }
-    renderVehicleList();
-  }
+const vehiclesListDiv = document.getElementById('vehiclesList');
+const detailFormDiv = document.getElementById('vehicleDetailForm');
+const placeholderDiv = document.getElementById('detailPlaceholder');
+const addModal = document.getElementById('addModal');
+const searchInput = document.getElementById('searchInput');
+const statusFilter = document.getElementById('statusFilter');
 
-  function renderVehicleList() {
-    const filterText = searchInput.value.toLowerCase();
-    const filterStatus = statusFilter.value;
-    let filtered = vehicles.filter(v => 
-      (v.plaque.toLowerCase().includes(filterText) || v.client.toLowerCase().includes(filterText) || (v.modele && v.modele.toLowerCase().includes(filterText))) &&
-      (filterStatus === 'all' || v.statut === filterStatus)
-    );
-    if (filtered.length===0) { vehiclesListDiv.innerHTML='<div class="placeholder">Aucun véhicule</div>'; return; }
-    vehiclesListDiv.innerHTML = filtered.map(v => `
-      <div class="vehicle-card ${selectedVehicleId===v.id?'selected':''}" data-id="${v.id}">
-        <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
-        <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
-        <span class="status-badge"><i class="fas fa-calendar-alt"></i> ${v.dateCreation?.split(' ')[0] || ''}</span>
-        ${v.photos?.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ''}
-      </div>
-    `).join('');
-    document.querySelectorAll('.vehicle-card').forEach(card => card.addEventListener('click', () => selectVehicle(card.dataset.id)));
-  }
+function saveVehicles() { localStorage.setItem('sav_vehicles', JSON.stringify(vehicles)); }
 
-  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
-  function selectVehicle(id) { selectedVehicleId=id; const v=vehicles.find(v=>v.id===id); if(v) { renderVehicleList(); showDetailForm(v); } }
-  function showDetailForm(v) {
-    placeholderDiv.style.display='none'; detailFormDiv.style.display='block';
-    const statusOptions=['Réceptionné','Diagnostic en cours','En attente accord client','Travaux en cours','Prêt pour livraison','Livré'];
-    const photosHtml = (v.photos||[]).map(p=>`<img src="${p}" style="max-width:80px; max-height:80px; border-radius:8px; margin:5px;">`).join('');
-    detailFormDiv.innerHTML = `
-      <h2>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h2>
-      <div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s=>`<option ${v.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(' ','T')||''}"></div>
-      <div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(' ','T')||''}"></div>
-      <div class="form-group"><label>Immatriculation</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}"></div>
-      <div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div>
-      <div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div>
-      <div class="form-group"><label>Pannes signalées</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient||'')}</textarea></div>
-      <div class="form-group"><label>Rapport diagnostic</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic||'')}</textarea></div>
-      <div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces||'')}</textarea></div>
-      <div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>
-      <div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
-      <div class="form-group"><label>Carte</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button></div>
-      <div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger">Supprimer</button><button id="saveDetailBtn" class="btn-primary">Enregistrer</button></div>
-    `;
-    setTimeout(()=>initMap(v.position),100);
-    document.getElementById('saveDetailBtn').addEventListener('click',()=>saveVehicleDetails(v.id));
-    document.getElementById('deleteVehicleBtn').addEventListener('click',()=>deleteVehicle(v.id));
-    document.getElementById('getCurrentPosBtn').addEventListener('click',()=>getCurrentLocationForVehicle(v.id));
-    const up=document.getElementById('photoUpload'); if(up) up.addEventListener('change',(e)=>handlePhotoUpload(v.id,e.target.files));
+function loadVehicles() {
+  const data = localStorage.getItem('sav_vehicles');
+  if (data && JSON.parse(data).length > 0) {
+    vehicles = JSON.parse(data);
+    vehicles.forEach(v => { if (!v.photos) v.photos=[]; if (!v.history) v.history=[]; if (v.numeroIntervention===undefined) v.numeroIntervention=""; if (v.observations===undefined) v.observations=""; });
+    saveVehicles();
+  } else {
+    vehicles = bnetdRaw.map((row, idx) => {
+      const pos = getCoordFromPositionGeo(row.positionGeo);
+      return {
+        id: `bnetd_${idx}`,
+        nb: row.nb,
+        client: "BNETD",
+        dateCreation: row.dateCreation,
+        dateLivraison: "",
+        plaque: row.immat,
+        marque: row.marque,
+        modele: row.modele,
+        travauxClient: row.pannes,
+        rapportDiagnostic: row.rapport,
+        pieces: row.pieces,
+        statut: "Réceptionné",
+        positionGeo: row.positionGeo,
+        position: pos,
+        adresseTexte: pos.adresse,
+        numeroIntervention: "",
+        observations: "",
+        photos: [],
+        history: [{ date: new Date().toISOString(), action: "Création depuis fichier BNETD", status: "Réceptionné" }]
+      };
+    });
+    saveVehicles();
   }
-  function handlePhotoUpload(id,files) { const v=vehicles.find(v=>v.id===id); if(v){ files.forEach(f=>{ const r=new FileReader(); r.onload=e=>{ v.photos.push(e.target.result); saveVehicles(); const pv=document.getElementById('photoPreview'); if(pv){ let img=document.createElement('img'); img.src=e.target.result; img.style.maxWidth='80px'; pv.appendChild(img); } }; r.readAsDataURL(f); }); } }
-  function initMap(pos) { if(map) map.remove(); const lat=pos?.lat||DEFAULT_POSITION.lat, lng=pos?.lng||DEFAULT_POSITION.lng; map=L.map('mapContainer').setView([lat,lng],DEFAULT_ZOOM); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map); if(marker) marker.remove(); marker=L.marker([lat,lng],{draggable:true}).addTo(map); marker.on('dragend',()=>updateVehiclePosition(selectedVehicleId,marker.getLatLng())); }
-  function updateVehiclePosition(id,coords) { const v=vehicles.find(v=>v.id===id); if(v){ v.position={lat:coords.lat,lng:coords.lng}; saveVehicles(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18`).then(r=>r.json()).then(d=>{ if(d.display_name){ v.adresseTexte=d.display_name.substring(0,100); saveVehicles(); } }).catch(()=>{}); } }
-  function getCurrentLocationForVehicle(id){ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ const coords={lat:p.coords.latitude,lng:p.coords.longitude}; updateVehiclePosition(id,coords); if(marker) marker.setLatLng(coords); if(map) map.setView([coords.lat,coords.lng],DEFAULT_ZOOM); },()=>alert("Géo refusée")); else alert("Non supporté"); }
-  function saveVehicleDetails(id){
-    const v=vehicles.find(v=>v.id===id); if(!v) return;
-    v.statut=document.getElementById('detailStatus').value;
-    v.dateCreation=document.getElementById('detailDateCreation').value?.replace('T',' ');
-    v.dateLivraison=document.getElementById('detailDateLivraison').value?.replace('T',' ');
-    v.plaque=document.getElementById('detailPlaque').value;
-    v.marque=document.getElementById('detailMarque').value;
-    v.modele=document.getElementById('detailModele').value;
-    v.travauxClient=document.getElementById('detailPannes').value;
-    v.rapportDiagnostic=document.getElementById('detailRapport').value;
-    v.pieces=document.getElementById('detailPieces').value;
-    v.positionGeo=document.getElementById('detailPositionGeo').value;
-    saveVehicles(); renderVehicleList(); alert("Enregistré");
-  }
-  function deleteVehicle(id){ if(confirm("Supprimer ?")){ vehicles=vehicles.filter(v=>v.id!==id); if(selectedVehicleId===id){ selectedVehicleId=null; detailFormDiv.style.display='none'; placeholderDiv.style.display='block'; } saveVehicles(); renderVehicleList(); } }
-  function addVehicle(plaque,client,modele){
-    const newId=Date.now().toString();
-    vehicles.push({ id:newId, client, plaque, marque:"", modele, statut:"Réceptionné", dateCreation:new Date().toISOString().slice(0,19).replace('T',' '), dateLivraison:"", travauxClient:"", rapportDiagnostic:"", pieces:"", positionGeo:"", position:DEFAULT_POSITION, adresseTexte:"Abidjan", photos:[], history:[] });
-    saveVehicles(); renderVehicleList(); selectVehicle(newId);
-  }
-  // Export Excel format BNETD
-  function exportToExcel(){
-    const data = vehicles.map((v,idx) => ({
-      "NB": idx+1,
-      "CLIENT": v.client,
-      "Date de création": v.dateCreation || "",
-      "Date de Livraison": v.dateLivraison || "",
-      "Immatriculation": v.plaque,
-      "Marque": v.marque,
-      "Modèle": v.modele,
-      "PANNES SIGNALEES": v.travauxClient || "",
-      "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
-      "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
-      "STATUT": v.statut,
-      "POSITION GEO": v.positionGeo || ""
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Suivi BNETD");
-    XLSX.writeFile(wb, `BNETD_vehicules_${new Date().toISOString().slice(0,10)}.xlsx`);
-  }
-  function exportToPDF(){
-    const element = document.createElement('div');
-    element.innerHTML = `<h2>Suivi BNETD</h2><table border="1">${vehicles.map(v=>`<tr><td>${v.plaque}</td><td>${v.client}</td><td>${v.statut}</td><td>${v.travauxClient||''}</td></tr>`).join('')}</table>`;
-    document.body.appendChild(element);
-    html2pdf().from(element).set({filename:`BNETD_${Date.now()}.pdf`}).save().then(()=>element.remove());
-  }
-  // Tableau de bord
-  function renderDashboard(){
-    const statsDiv=document.getElementById('statsContainer');
-    const total=vehicles.length;
-    const statusCount={}; vehicles.forEach(v=>{statusCount[v.statut]=(statusCount[v.statut]||0)+1;});
-    statsDiv.innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['Réceptionné']||0}</div><div class="stat-label">Réceptionné</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['Diagnostic en cours']||0}</div><div class="stat-label">Diagnostic</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['En attente accord client']||0}</div><div class="stat-label">Attente accord</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['Travaux en cours']||0}</div><div class="stat-label">Travaux</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['Prêt pour livraison']||0}</div><div class="stat-label">Prêt livraison</div></div>
-      <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>`;
-    const pending=vehicles.filter(v=>v.statut!=='Livré' && (!v.dateLivraison || v.dateLivraison===''));
-    document.getElementById('pendingAccordContainer').innerHTML=`<div class="stat-card"><div class="stat-label">En attente de livraison (${pending.length})</div><ul>${pending.slice(0,5).map(v=>`<li>${v.plaque}</li>`).join('')}</ul></div>`;
-    document.getElementById('chartContainer').innerHTML=`<h3>Répartition</h3><div style="display:flex; gap:10px;">${Object.entries(statusCount).map(([k,v])=>`<div style="background:#ff9800; padding:5px; border-radius:8px;">${k} (${v})</div>`).join('')}</div>`;
-  }
-  // Gestion onglets
-  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    if(btn.dataset.tab==='list'){ document.getElementById('tab-list').style.display='flex'; document.getElementById('tab-dashboard').style.display='none'; renderVehicleList(); }
-    else{ document.getElementById('tab-list').style.display='none'; document.getElementById('tab-dashboard').style.display='block'; renderDashboard(); }
+  renderVehicleList();
+}
+
+function renderVehicleList() {
+  const filterText = searchInput.value.toLowerCase();
+  const filterStatus = statusFilter.value;
+  let filtered = vehicles.filter(v => 
+    (v.plaque.toLowerCase().includes(filterText) || v.client.toLowerCase().includes(filterText) || (v.modele && v.modele.toLowerCase().includes(filterText))) &&
+    (filterStatus === 'all' || v.statut === filterStatus)
+  );
+  if (filtered.length===0) { vehiclesListDiv.innerHTML='<div class="placeholder">Aucun véhicule</div>'; return; }
+  vehiclesListDiv.innerHTML = filtered.map(v => `
+    <div class="vehicle-card ${selectedVehicleId===v.id?'selected':''}" data-id="${v.id}">
+      <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
+      <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
+      <span class="status-badge"><i class="fas fa-calendar-alt"></i> ${v.dateCreation?.split(' ')[0] || ''}</span>
+      ${v.photos?.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ''}
+    </div>
+  `).join('');
+  document.querySelectorAll('.vehicle-card').forEach(card => card.addEventListener('click', () => selectVehicle(card.dataset.id)));
+}
+
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+function selectVehicle(id) { selectedVehicleId=id; const v=vehicles.find(v=>v.id===id); if(v) { renderVehicleList(); showDetailForm(v); } }
+
+function showDetailForm(v) {
+  placeholderDiv.style.display='none'; detailFormDiv.style.display='block';
+  const statusOptions=['Réceptionné','Diagnostic en cours','En attente accord client','Travaux en cours','Prêt pour livraison','Livré'];
+  const photosHtml = (v.photos||[]).map(p=>`<img src="${p}" style="max-width:80px; max-height:80px; border-radius:8px; margin:5px;">`).join('');
+  detailFormDiv.innerHTML = `
+    <h2>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h2>
+    <div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s=>`<option ${v.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(' ','T')||''}"></div>
+    <div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(' ','T')||''}"></div>
+    <div class="form-group"><label>Immatriculation</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}"></div>
+    <div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div>
+    <div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div>
+    <div class="form-group"><label>Numéro d'intervention</label><input type="text" id="detailNumeroIntervention" value="${escapeHtml(v.numeroIntervention||'')}"></div>
+    <div class="form-group"><label>Pannes signalées (client)</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient||'')}</textarea></div>
+    <div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic||'')}</textarea></div>
+    <div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces||'')}</textarea></div>
+    <div class="form-group"><label>Autres observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations||'')}</textarea></div>
+    <div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>
+    <div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
+    <div class="form-group"><label>Carte</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button></div>
+    <div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger">Supprimer</button><button id="saveDetailBtn" class="btn-primary">Enregistrer</button></div>
+  `;
+  setTimeout(()=>initMap(v.position),100);
+  document.getElementById('saveDetailBtn').addEventListener('click',()=>saveVehicleDetails(v.id));
+  document.getElementById('deleteVehicleBtn').addEventListener('click',()=>deleteVehicle(v.id));
+  document.getElementById('getCurrentPosBtn').addEventListener('click',()=>getCurrentLocationForVehicle(v.id));
+  const up=document.getElementById('photoUpload'); if(up) up.addEventListener('change',(e)=>handlePhotoUpload(v.id,e.target.files));
+}
+
+function handlePhotoUpload(id,files) { const v=vehicles.find(v=>v.id===id); if(v){ Array.from(files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{ v.photos.push(e.target.result); saveVehicles(); const pv=document.getElementById('photoPreview'); if(pv){ let img=document.createElement('img'); img.src=e.target.result; img.style.maxWidth='80px'; pv.appendChild(img); } }; r.readAsDataURL(f); }); } }
+
+function initMap(pos) { if(map) map.remove(); const lat=pos?.lat||DEFAULT_POSITION.lat, lng=pos?.lng||DEFAULT_POSITION.lng; map=L.map('mapContainer').setView([lat,lng],DEFAULT_ZOOM); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map); if(marker) marker.remove(); marker=L.marker([lat,lng],{draggable:true}).addTo(map); marker.on('dragend',()=>updateVehiclePosition(selectedVehicleId,marker.getLatLng())); }
+
+function updateVehiclePosition(id,coords) { const v=vehicles.find(v=>v.id===id); if(v){ v.position={lat:coords.lat,lng:coords.lng}; saveVehicles(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18`).then(r=>r.json()).then(d=>{ if(d.display_name){ v.adresseTexte=d.display_name.substring(0,100); saveVehicles(); } }).catch(()=>{}); } }
+
+function getCurrentLocationForVehicle(id){ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ const coords={lat:p.coords.latitude,lng:p.coords.longitude}; updateVehiclePosition(id,coords); if(marker) marker.setLatLng(coords); if(map) map.setView([coords.lat,coords.lng],DEFAULT_ZOOM); },()=>alert("Géolocalisation refusée")); else alert("Non supporté"); }
+
+function saveVehicleDetails(id){
+  const v=vehicles.find(v=>v.id===id); if(!v) return;
+  v.statut=document.getElementById('detailStatus').value;
+  v.dateCreation=document.getElementById('detailDateCreation').value?.replace('T',' ');
+  v.dateLivraison=document.getElementById('detailDateLivraison').value?.replace('T',' ');
+  v.plaque=document.getElementById('detailPlaque').value;
+  v.marque=document.getElementById('detailMarque').value;
+  v.modele=document.getElementById('detailModele').value;
+  v.numeroIntervention=document.getElementById('detailNumeroIntervention').value;
+  v.travauxClient=document.getElementById('detailPannes').value;
+  v.rapportDiagnostic=document.getElementById('detailRapport').value;
+  v.pieces=document.getElementById('detailPieces').value;
+  v.observations=document.getElementById('detailObservations').value;
+  v.positionGeo=document.getElementById('detailPositionGeo').value;
+  saveVehicles(); renderVehicleList(); alert("Enregistré");
+}
+
+function deleteVehicle(id){ if(confirm("Supprimer définitivement ?")){ vehicles=vehicles.filter(v=>v.id!==id); if(selectedVehicleId===id){ selectedVehicleId=null; detailFormDiv.style.display='none'; placeholderDiv.style.display='block'; } saveVehicles(); renderVehicleList(); } }
+
+function addVehicle(plaque,client,modele){
+  const newId=Date.now().toString();
+  vehicles.push({ id:newId, client, plaque, marque:"", modele, statut:"Réceptionné", dateCreation:new Date().toISOString().slice(0,19).replace('T',' '), dateLivraison:"", travauxClient:"", rapportDiagnostic:"", pieces:"", positionGeo:"", position:DEFAULT_POSITION, adresseTexte:"Abidjan", numeroIntervention:"", observations:"", photos:[], history:[] });
+  saveVehicles(); renderVehicleList(); selectVehicle(newId);
+}
+
+// Export Excel (format exact BNETD)
+function exportToExcel(){
+  const data = vehicles.map((v,idx) => ({
+    "NB": idx+1,
+    "CLIENT": v.client,
+    "Date de création": v.dateCreation || "",
+    "Date de Livraison": v.dateLivraison || "",
+    "Immatriculation": v.plaque,
+    "Marque": v.marque,
+    "Modèle": v.modele,
+    "PANNES SIGNALEES": v.travauxClient || "",
+    "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
+    "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
+    "STATUT": v.statut,
+    "POSITION GEO": v.positionGeo || "",
+    "NUMERO INTERVENTION": v.numeroIntervention || "",
+    "OBSERVATIONS": v.observations || ""
   }));
-  document.getElementById('addVehicleBtn').onclick=()=>addModal.style.display='block';
-  document.querySelector('.close').onclick=()=>addModal.style.display='none';
-  window.onclick=e=>{if(e.target===addModal) addModal.style.display='none';};
-  document.getElementById('quickAddForm').onsubmit=e=>{ e.preventDefault(); const plaque=document.getElementById('newPlaque').value.trim(); const client=document.getElementById('newClient').value.trim(); const modele=document.getElementById('newModel').value.trim(); if(!plaque||!client) return alert("Plaque et client requis"); addVehicle(plaque,client,modele); addModal.style.display='none'; document.getElementById('quickAddForm').reset(); };
-  searchInput.addEventListener('input',renderVehicleList);
-  statusFilter.addEventListener('change',renderVehicleList);
-  document.getElementById('exportExcelBtn').addEventListener('click',exportToExcel);
-  document.getElementById('exportPdfBtn').addEventListener('click',exportToPDF);
-  loadVehicles();
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Suivi BNETD");
+  XLSX.writeFile(wb, `BNETD_vehicules_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportToPDF(){
+  const element = document.createElement('div');
+  element.style.padding='20px';
+  element.innerHTML = `<h2>Suivi BNETD - ${new Date().toLocaleString()}</h2><table border="1" cellpadding="5"><tr><th>Plaque</th><th>Client</th><th>Statut</th><th>Pannes</th><th>Pièces</th></tr>${vehicles.map(v=>`<tr><td>${v.plaque}</td><td>${v.client}</td><td>${v.statut}</td><td>${(v.travauxClient||'').substring(0,50)}</td><td>${(v.pieces||'').substring(0,50)}</td></tr>`).join('')}</table>`;
+  document.body.appendChild(element);
+  html2pdf().from(element).set({filename:`BNETD_${Date.now()}.pdf`, margin:0.5}).save().then(()=>element.remove());
+}
+
+// Sauvegarde JSON
+function backupData(){
+  const dataStr = JSON.stringify(vehicles, null, 2);
+  const blob = new Blob([dataStr], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sauvegarde_SAV_${new Date().toISOString().slice(0,19)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreData(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const restored = JSON.parse(ev.target.result);
+        if (Array.isArray(restored)) {
+          vehicles = restored;
+          saveVehicles();
+          renderVehicleList();
+          alert("Restauration réussie !");
+        } else throw new Error();
+      } catch(err) { alert("Fichier invalide"); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// Tableau de bord (avec liste complète des véhicules en attente de livraison)
+function renderDashboard(){
+  const statsDiv=document.getElementById('statsContainer');
+  const total=vehicles.length;
+  const statusCount={}; vehicles.forEach(v=>{statusCount[v.statut]=(statusCount[v.statut]||0)+1;});
+  statsDiv.innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Réceptionné']||0}</div><div class="stat-label">Réceptionné</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Diagnostic en cours']||0}</div><div class="stat-label">Diagnostic</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['En attente accord client']||0}</div><div class="stat-label">Attente accord</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Travaux en cours']||0}</div><div class="stat-label">Travaux</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Prêt pour livraison']||0}</div><div class="stat-label">Prêt livraison</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>`;
+  
+  const pending = vehicles.filter(v => v.statut !== 'Livré' && (!v.dateLivraison || v.dateLivraison === ''));
+  const pendingHTML = pending.map(v => `<li><strong>${v.plaque}</strong> - ${v.client} (${v.statut})</li>`).join('');
+  document.getElementById('pendingAccordContainer').innerHTML = `
+    <div class="stat-card" style="grid-column: span 2;">
+      <div class="stat-label">🚚 Véhicules non encore livrés (${pending.length})</div>
+      <div class="pending-list"><ul>${pendingHTML || '<li>Aucun</li>'}</ul></div>
+    </div>`;
+  
+  const chartHtml = `<h3>Répartition par statut</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v])=>`<div style="background:#ff9800; padding:5px 10px; border-radius:20px;">${k} (${v})</div>`).join('')}</div>`;
+  document.getElementById('chartContainer').innerHTML = chartHtml;
+}
+
+// Gestion onglets
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(btn.dataset.tab==='list'){ document.getElementById('tab-list').style.display='flex'; document.getElementById('tab-dashboard').style.display='none'; renderVehicleList(); }
+  else{ document.getElementById('tab-list').style.display='none'; document.getElementById('tab-dashboard').style.display='block'; renderDashboard(); }
+}));
+
+document.getElementById('addVehicleBtn').onclick=()=>addModal.style.display='block';
+document.querySelector('.close').onclick=()=>addModal.style.display='none';
+window.onclick=e=>{if(e.target===addModal) addModal.style.display='none';};
+document.getElementById('quickAddForm').onsubmit=e=>{ e.preventDefault(); const plaque=document.getElementById('newPlaque').value.trim(); const client=document.getElementById('newClient').value.trim(); const modele=document.getElementById('newModel').value.trim(); if(!plaque||!client) return alert("Plaque et client requis"); addVehicle(plaque,client,modele); addModal.style.display='none'; document.getElementById('quickAddForm').reset(); };
+searchInput.addEventListener('input',renderVehicleList);
+statusFilter.addEventListener('change',renderVehicleList);
+document.getElementById('exportExcelBtn').addEventListener('click',exportToExcel);
+document.getElementById('exportPdfBtn').addEventListener('click',exportToPDF);
+document.getElementById('backupDataBtn').addEventListener('click',backupData);
+document.getElementById('restoreDataBtn').addEventListener('click',restoreData);
+
+loadVehicles();
 </script>
 </body>
 </html>
