@@ -1,15 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title> APPLICATION BY NTR </title>
+  <title>SAV Fleet Manager - BNETD Côte d'Ivoire</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    /* --- Styles complets (reprendre ceux du début) --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7fc; color: #1e2a3e; }
     header { background: #1e3c72; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
@@ -51,21 +51,27 @@
     .modal-content { background: white; margin: 10% auto; width: 90%; max-width: 500px; border-radius: 24px; padding: 1.5rem; position: relative; }
     .close { position: absolute; right: 1rem; top: 0.5rem; font-size: 1.8rem; cursor: pointer; }
     @media (max-width: 700px) { .dashboard { flex-direction: column; } .vehicle-list-panel, .vehicle-detail-panel { height: auto; max-height: 50vh; } }
+    .pdf-table { width: 100%; border-collapse: collapse; font-size: 10pt; font-family: 'Segoe UI', Arial, sans-serif; }
+    .pdf-table th, .pdf-table td { border: 1px solid #999; padding: 6px 4px; text-align: left; vertical-align: top; }
+    .pdf-table th { background: #1e3c72; color: white; font-weight: bold; }
+    .pdf-table tr:nth-child(even) { background: #f2f2f2; }
+    .pdf-header { text-align: center; margin-bottom: 20px; }
+    .pdf-header h2 { color: #1e3c72; }
   </style>
 </head>
 <body>
 <header>
-  <h1><i class="fas fa-truck-moving"></i> NTR-APP-BNETD </h1>
+  <h1><i class="fas fa-truck-moving"></i> SAV Fleet Manager - BNETD CI</h1>
   <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-    <button id="exportExcelBtn" class="btn-primary" style="background:#2e7d32;"><i class="fas fa-file-excel"></i> Excel</button>
-    <button id="exportPdfBtn" class="btn-primary" style="background:#c62828;"><i class="fas fa-file-pdf"></i> PDF</button>
+    <button id="exportExcelBtn" class="btn-primary" style="background:#2e7d32;"><i class="fas fa-file-excel"></i> Excel (format BNETD)</button>
+    <button id="exportPdfBtn" class="btn-primary" style="background:#c62828;"><i class="fas fa-file-pdf"></i> PDF (format BNETD)</button>
     <button id="backupDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Sauvegarder</button>
     <button id="restoreDataBtn" class="btn-secondary"><i class="fas fa-upload"></i> Restaurer</button>
     <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
   </div>
 </header>
 <div class="tabs">
-  <button class="tab-btn active" data-tab="list">📋 Liste & Détails</button>
+  <button class="tab-btn active" data-tab="list">📋 Liste & Détail</button>
   <button class="tab-btn" data-tab="dashboard">📊 Tableau de bord</button>
 </div>
 
@@ -111,7 +117,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ======================== DONNÉES BNETD (47 véhicules) ========================
+// ======================== DONNÉES BNETD (47 véhicules) - STRUCTURE ORIGINALE ========================
 const bnetdRaw = [
   { nb:1, dateCreation:"2026-05-06 09:08:52", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
   { nb:2, dateCreation:"2026-05-05 10:24:40", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
@@ -180,13 +186,7 @@ let map = null, marker = null;
 const DEFAULT_POSITION = { lat:5.3364, lng:-4.0267 };
 const DEFAULT_ZOOM = 12;
 
-const vehiclesListDiv = document.getElementById('vehiclesList');
-const detailFormDiv = document.getElementById('vehicleDetailForm');
-const placeholderDiv = document.getElementById('detailPlaceholder');
-const addModal = document.getElementById('addModal');
-const searchInput = document.getElementById('searchInput');
-const statusFilter = document.getElementById('statusFilter');
-
+// Liste des accessoires et documents (pour l'interface)
 const accessoriesList = ["Roue de secours", "Cric", "Triangle", "Extincteur", "Trousse de secours", "Gilet jaune", "Câble de démarrage", "Kit anti-crevaison"];
 const documentsList = ["Carte grise", "Certificat d'immatriculation", "PV visite technique", "Attestation assurance", "Permis de conduire", "Carnet d'entretien", "Manuel d'utilisation"];
 
@@ -200,6 +200,13 @@ function getEmptyVehicle(plaque, client, modele) {
     statut: "Réceptionné",
     dateCreation: new Date().toISOString().slice(0,19).replace('T',' '),
     dateLivraison: "",
+    travauxClient: "",
+    rapportDiagnostic: "",
+    pieces: "",
+    positionGeo: "",
+    position: DEFAULT_POSITION,
+    adresseTexte: "Abidjan",
+    // Champs supplémentaires (présents dans l'interface mais exclus des exports)
     kilometrage: "",
     chassis: "",
     energie: "Diesel",
@@ -214,13 +221,6 @@ function getEmptyVehicle(plaque, client, modele) {
     puissance: "",
     finAssurance: "",
     finVignette: "",
-    travauxClient: "",
-    rapportDiagnostic: "",
-    pieces: "",
-    observations: "",
-    positionGeo: "",
-    position: DEFAULT_POSITION,
-    adresseTexte: "Abidjan",
     accessoires: [],
     documents: [],
     photos: [],
@@ -238,14 +238,14 @@ function loadVehicles() {
       vehicles = loaded.map(v => ({
         ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || ""),
         ...v,
-        accessoires: v.accessoires || [],
-        documents: v.documents || [],
         photos: v.photos || [],
-        history: v.history || []
+        history: v.history || [],
+        accessoires: v.accessoires || [],
+        documents: v.documents || []
       }));
     } catch(e) { vehicles = []; }
   }
-  if (!vehicles || vehicles.length === 0) {
+  if (!vehicles.length) {
     vehicles = bnetdRaw.map((row, idx) => {
       const pos = getCoordFromPositionGeo(row.positionGeo);
       return {
@@ -269,13 +269,13 @@ function loadVehicles() {
 }
 
 function renderVehicleList() {
-  const filterText = searchInput.value.toLowerCase();
+  const filterText = (searchInput.value || "").toLowerCase();
   const filterStatus = statusFilter.value;
   let filtered = vehicles.filter(v => 
     (v.plaque.toLowerCase().includes(filterText) || v.client.toLowerCase().includes(filterText) || (v.modele && v.modele.toLowerCase().includes(filterText))) &&
     (filterStatus === 'all' || v.statut === filterStatus)
   );
-  if (filtered.length===0) { vehiclesListDiv.innerHTML='<div class="placeholder">Aucun véhicule</div>'; return; }
+  if (!filtered.length) { vehiclesListDiv.innerHTML='<div class="placeholder">Aucun véhicule</div>'; return; }
   vehiclesListDiv.innerHTML = filtered.map(v => `
     <div class="vehicle-card ${selectedVehicleId===v.id?'selected':''}" data-id="${v.id}">
       <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
@@ -296,7 +296,7 @@ function showDetailForm(v) {
   const statusOptions=['Réceptionné','Diagnostic en cours','En attente accord client','Travaux en cours','Prêt pour livraison','Livré'];
   const photosHtml = (v.photos||[]).map(p=>`<img src="${p}" style="max-width:80px; max-height:80px; border-radius:8px; margin:5px;">`).join('');
   
-  // Génération des checkboxes accessoires
+  // Génération checkboxes accessoires
   let accessoriesHtml = '<div class="checkbox-group">';
   accessoriesList.forEach(acc => {
     const checked = v.accessoires && v.accessoires.includes(acc) ? 'checked' : '';
@@ -352,7 +352,6 @@ function showDetailForm(v) {
     <div class="form-group"><label>Pannes signalées (client)</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient||'')}</textarea></div>
     <div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic||'')}</textarea></div>
     <div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces||'')}</textarea></div>
-    <div class="form-group"><label>Autres observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations||'')}</textarea></div>
     <div class="form-group"><label>Accessoires de bord</label>${accessoriesHtml}</div>
     <div class="form-group"><label>Documents fournis</label>${documentsHtml}</div>
     <div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>
@@ -400,9 +399,7 @@ function saveVehicleDetails(id){
   v.travauxClient = document.getElementById('detailPannes').value;
   v.rapportDiagnostic = document.getElementById('detailRapport').value;
   v.pieces = document.getElementById('detailPieces').value;
-  v.observations = document.getElementById('detailObservations').value;
   v.positionGeo = document.getElementById('detailPositionGeo').value;
-  // Récupérer checkboxes
   v.accessoires = Array.from(document.querySelectorAll('.accessoire-check:checked')).map(cb => cb.value);
   v.documents = Array.from(document.querySelectorAll('.document-check:checked')).map(cb => cb.value);
   saveVehicles(); renderVehicleList(); alert("Enregistré");
@@ -416,7 +413,7 @@ function addVehicle(plaque,client,modele){
   saveVehicles(); renderVehicleList(); selectVehicle(newVehicle.id);
 }
 
-// Export Excel avec tous les nouveaux champs
+// Export Excel : UNIQUEMENT les 12 colonnes originales
 function exportToExcel(){
   const data = vehicles.map((v,idx) => ({
     "NB": idx+1,
@@ -426,43 +423,75 @@ function exportToExcel(){
     "Immatriculation": v.plaque,
     "Marque": v.marque,
     "Modèle": v.modele,
-    "Kilométrage": v.kilometrage,
-    "N° Châssis": v.chassis,
-    "Énergie": v.energie,
-    "Niveau carburant": v.niveauCarburant,
-    "Mise en service": v.miseEnService,
-    "Propriétaire": v.proprietaireNom,
-    "Contact propriétaire": v.proprietaireContact,
-    "Chauffeur": v.chauffeurNom,
-    "Contact chauffeur": v.chauffeurContact,
-    "Transmission": v.transmission,
-    "Couleur": v.couleur,
-    "Puissance": v.puissance,
-    "Fin assurance": v.finAssurance,
-    "Fin vignette": v.finVignette,
     "PANNES SIGNALEES": v.travauxClient || "",
     "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
     "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
     "STATUT": v.statut,
-    "POSITION GEO": v.positionGeo || "",
-    "Accessoires": (v.accessoires || []).join(", "),
-    "Documents": (v.documents || []).join(", "),
-    "Observations": v.observations || ""
+    "POSITION GEO": v.positionGeo || ""
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Suivi BNETD");
-  XLSX.writeFile(wb, `BNETD_complet_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `BNETD_vehicules_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-function exportToPDF(){
+// Export PDF : UNIQUEMENT les 12 colonnes originales, mise en page professionnelle
+function exportToPDF() {
   const element = document.createElement('div');
-  element.style.padding='20px';
-  element.innerHTML = `<h2>Suivi complet BNETD - ${new Date().toLocaleString()}</h2><table border="1" cellpadding="5"><tr><th>Plaque</th><th>Client</th><th>Statut</th><th>Km</th><th>Pannes</th><th>Pièces</th></tr>${vehicles.map(v=>`<tr><td>${v.plaque}</td><td>${v.client}</td><td>${v.statut}</td><td>${v.kilometrage}</td><td>${(v.travauxClient||'').substring(0,50)}</td><td>${(v.pieces||'').substring(0,50)}</td></tr>`).join('')}</table>`;
+  element.style.padding = '20px';
+  element.style.fontFamily = 'Arial, sans-serif';
+  
+  let html = `
+    <div class="pdf-header">
+      <h2>SUIVI DES VÉHICULES - BNETD / GARAGE</h2>
+      <p>Export généré le ${new Date().toLocaleString()}</p>
+      <p>Nombre de véhicules : ${vehicles.length}</p>
+    </div>
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th>NB</th><th>CLIENT</th><th>Date création</th><th>Date livraison</th>
+          <th>Immatriculation</th><th>Marque</th><th>Modèle</th>
+          <th>PANNES SIGNALEES</th><th>RAPPORT DIAGNOSTIC</th>
+          <th>PIECES A REMPLACER</th><th>STATUT</th><th>POSITION GEO</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  vehicles.forEach((v, idx) => {
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td>${escapeHtml(v.client)}</td>
+      <td>${v.dateCreation || ''}</td>
+      <td>${v.dateLivraison || ''}</td>
+      <td>${escapeHtml(v.plaque)}</td>
+      <td>${escapeHtml(v.marque)}</td>
+      <td>${escapeHtml(v.modele)}</td>
+      <td>${escapeHtml(v.travauxClient || '').substring(0, 80)}</td>
+      <td>${escapeHtml(v.rapportDiagnostic || '').substring(0, 80)}</td>
+      <td>${escapeHtml(v.pieces || '').substring(0, 80)}</td>
+      <td>${v.statut}</td>
+      <td>${escapeHtml(v.positionGeo || '')}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table>`;
+  element.innerHTML = html;
   document.body.appendChild(element);
-  html2pdf().from(element).set({filename:`BNETD_${Date.now()}.pdf`, margin:0.5}).save().then(()=>element.remove());
+  
+  const opt = {
+    margin:        [0.5, 0.5, 0.5, 0.5],
+    filename:     `BNETD_export_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, letterRendering: true },
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+  };
+  
+  html2pdf().from(element).set(opt).save().then(() => element.remove());
 }
 
+// Sauvegarde JSON (contient TOUS les champs, y compris les supplémentaires)
 function backupData(){
   const dataStr = JSON.stringify(vehicles, null, 2);
   const blob = new Blob([dataStr], {type: "application/json"});
@@ -488,10 +517,10 @@ function restoreData(){
         const migrated = restored.map(v => ({
           ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || ""),
           ...v,
-          accessoires: v.accessoires || [],
-          documents: v.documents || [],
           photos: v.photos || [],
-          history: v.history || []
+          history: v.history || [],
+          accessoires: v.accessoires || [],
+          documents: v.documents || []
         }));
         vehicles = migrated;
         saveVehicles();
@@ -506,6 +535,7 @@ function restoreData(){
   input.click();
 }
 
+// Tableau de bord (basé sur les données principales)
 function renderDashboard(){
   const statsDiv=document.getElementById('statsContainer');
   const total=vehicles.length;
@@ -519,7 +549,7 @@ function renderDashboard(){
     <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>`;
   const pending = vehicles.filter(v => v.statut !== 'Livré' && (!v.dateLivraison || v.dateLivraison === ''));
   document.getElementById('pendingAccordContainer').innerHTML = `<div class="stat-card" style="grid-column: span 2;"><div class="stat-label">🚚 Non livrés (${pending.length})</div><div class="pending-list"><ul>${pending.map(v=>`<li>${v.plaque} - ${v.client} (${v.statut})</li>`).join('')}</ul></div></div>`;
-  document.getElementById('chartContainer').innerHTML = `<h3>Répartition</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v])=>`<div style="background:#ff9800; padding:5px 10px; border-radius:20px;">${k} (${v})</div>`).join('')}</div>`;
+  document.getElementById('chartContainer').innerHTML = `<h3>Répartition par statut</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v])=>`<div style="background:#ff9800; padding:5px 10px; border-radius:20px;">${k} (${v})</div>`).join('')}</div>`;
 }
 
 // Gestion onglets
