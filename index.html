@@ -10,7 +10,6 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-      /* ========== DESIGN PROFESSIONNEL SOBRE ========== */
       * {
         margin: 0;
         padding: 0;
@@ -24,7 +23,6 @@
         line-height: 1.4;
       }
 
-      /* Header professionnel */
       header {
         background: #0a2942;
         color: white;
@@ -40,18 +38,11 @@
       header h1 {
         font-size: 1.3rem;
         font-weight: 500;
-        letter-spacing: -0.3px;
         display: flex;
         align-items: center;
         gap: 0.6rem;
       }
 
-      header h1 i {
-        font-size: 1.2rem;
-        opacity: 0.9;
-      }
-
-      /* Boutons */
       .btn-primary, .btn-secondary, .btn-danger {
         border: none;
         padding: 0.45rem 1rem;
@@ -72,7 +63,6 @@
       }
       .btn-primary:hover {
         background: #1e4668;
-        transform: translateY(-1px);
       }
 
       .btn-secondary {
@@ -92,7 +82,6 @@
         background: #b02a37;
       }
 
-      /* Onglets */
       .tabs {
         display: flex;
         gap: 0.2rem;
@@ -117,7 +106,6 @@
         font-weight: 600;
       }
 
-      /* Panneaux */
       .dashboard {
         display: flex;
         flex-wrap: wrap;
@@ -146,7 +134,6 @@
         height: calc(100vh - 110px);
       }
 
-      /* Filtres */
       .search-filter {
         display: flex;
         gap: 0.7rem;
@@ -162,12 +149,7 @@
         background: white;
         font-family: inherit;
       }
-      .search-filter input:focus, .search-filter select:focus {
-        outline: none;
-        border-color: #2c5f8a;
-      }
 
-      /* Cartes véhicules - dimensions uniformes */
       .vehicles-list {
         display: flex;
         flex-direction: column;
@@ -181,7 +163,6 @@
         cursor: pointer;
         transition: all 0.15s;
         border: 1px solid #edf2f6;
-        display: block;
         width: 100%;
       }
       .vehicle-card.selected {
@@ -208,23 +189,23 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      .vehicle-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.3rem;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+      }
       .status-badge {
         display: inline-block;
         background: #eef2f5;
         padding: 0.2rem 0.6rem;
         border-radius: 20px;
         font-size: 0.7rem;
-        margin-top: 0.3rem;
         color: #2c5f8a;
       }
-      .vehicle-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.3rem;
-      }
 
-      /* Formulaires */
       .form-group {
         margin-bottom: 1rem;
       }
@@ -271,7 +252,6 @@
         gap: 0.3rem;
       }
 
-      /* Dashboard stats */
       .dashboard-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -315,7 +295,6 @@
         margin-top: 0.8rem;
       }
 
-      /* Carte et photos */
       .map-container {
         height: 220px;
         border-radius: 12px;
@@ -337,7 +316,6 @@
         border: 1px solid #e2e8f0;
       }
 
-      /* Modale */
       .modal {
         display: none;
         position: fixed;
@@ -379,7 +357,6 @@
         margin-top: 1rem;
       }
 
-      /* Notification toast */
       .toast-notification {
         position: fixed;
         bottom: 20px;
@@ -398,7 +375,6 @@
         to { transform: translateX(0); opacity: 1; }
       }
 
-      /* Responsive */
       @media (max-width: 700px) {
         .dashboard { flex-direction: column; }
         .vehicle-list-panel, .vehicle-detail-panel { height: auto; max-height: 60vh; }
@@ -412,7 +388,6 @@
       <div style="display: flex; gap: 0.6rem; flex-wrap: wrap">
         <button id="exportExcelBtn" class="btn-primary"><i class="fas fa-file-excel"></i> Excel</button>
         <button id="exportPdfBtn" class="btn-primary"><i class="fas fa-file-pdf"></i> PDF</button>
-        <button id="importExcelBtn" class="btn-secondary"><i class="fas fa-file-import"></i> Importer Odoo</button>
         <button id="backupDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Sauvegarder</button>
         <button id="restoreDataBtn" class="btn-secondary"><i class="fas fa-upload"></i> Restaurer</button>
         <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
@@ -453,16 +428,14 @@
       <div id="tab-dashboard" style="display: none; width: 100%">
         <div class="dashboard-stats" id="statsContainer"></div>
         <div class="dashboard-stats" id="pendingAccordContainer"></div>
-
         <div class="stat-card alert-card" style="text-align: left;">
           <div class="stat-label">⚠️ Véhicules SANS numéro d'intervention</div>
           <div class="stat-number" id="countNoIntervention">0</div>
           <div class="flex-btns">
-            <button id="exportNoInterventionExcel" class="btn-secondary"><i class="fas fa-file-excel"></i> Excel</button>
-            <button id="exportNoInterventionPdf" class="btn-secondary"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button id="exportNoInterventionExcel" class="btn-secondary">Excel</button>
+            <button id="exportNoInterventionPdf" class="btn-secondary">PDF</button>
           </div>
         </div>
-
         <div class="stat-card alert-card" style="text-align: left;">
           <div class="stat-label">⏳ Véhicules non livrés depuis trop longtemps</div>
           <div style="margin: 10px 0; display: flex; align-items: center; gap: 1rem;">
@@ -475,21 +448,19 @@
           </div>
           <div id="overdueListPreview" class="pending-list"></div>
           <div class="flex-btns">
-            <button id="exportOverdueExcel" class="btn-secondary"><i class="fas fa-file-excel"></i> Excel (retard)</button>
-            <button id="exportOverduePdf" class="btn-secondary"><i class="fas fa-file-pdf"></i> PDF (retard)</button>
+            <button id="exportOverdueExcel" class="btn-secondary">Excel (retard)</button>
+            <button id="exportOverduePdf" class="btn-secondary">PDF (retard)</button>
           </div>
         </div>
-
         <div class="stat-card" style="text-align: left;">
           <div class="stat-label">📂 Exports spécifiques</div>
           <div class="flex-btns">
-            <button id="exportLivresExcel" class="btn-secondary"><i class="fas fa-file-excel"></i> Excel - Livrés</button>
-            <button id="exportLivresPdf" class="btn-secondary"><i class="fas fa-file-pdf"></i> PDF - Livrés</button>
-            <button id="exportNonLivresExcel" class="btn-secondary"><i class="fas fa-file-excel"></i> Excel - Non livrés</button>
-            <button id="exportNonLivresPdf" class="btn-secondary"><i class="fas fa-file-pdf"></i> PDF - Non livrés</button>
+            <button id="exportLivresExcel" class="btn-secondary">Excel - Livrés</button>
+            <button id="exportLivresPdf" class="btn-secondary">PDF - Livrés</button>
+            <button id="exportNonLivresExcel" class="btn-secondary">Excel - Non livrés</button>
+            <button id="exportNonLivresPdf" class="btn-secondary">PDF - Non livrés</button>
           </div>
         </div>
-
         <div id="chartContainer" style="background: white; border-radius: 16px; padding: 1rem; margin-top: 1rem; border: 1px solid #eef2f6;"></div>
       </div>
     </main>
@@ -514,65 +485,20 @@
         const notification = document.createElement('div');
         notification.className = 'toast-notification';
         notification.style.background = isError ? '#dc3545' : '#2c5f8a';
-        notification.innerHTML = message;
+        notification.innerHTML = '<i class="fas fa-' + (isError ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + message;
         document.body.appendChild(notification);
-        setTimeout(() => {
-          notification.remove();
-        }, 3000);
+        setTimeout(() => { notification.remove(); }, 3000);
       }
 
-      // ======================== DONNÉES BNETD (47 véhicules) ========================
+      // ======================== DONNÉES BNETD ========================
       const bnetdRaw = [
         { nb: 1, dateCreation: "2026-05-06 09:08:52", immat: "853LY01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
         { nb: 2, dateCreation: "2026-05-05 10:24:40", immat: "2467KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
         { nb: 3, dateCreation: "2026-04-28 16:58:50", immat: "3235KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT 1" },
-        { nb: 4, dateCreation: "2026-04-28 14:50:06", immat: "41LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport: "BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces: "MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 5, dateCreation: "2026-04-28 14:40:37", immat: "AA969LR", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport: "ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces: "MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 6, dateCreation: "2026-04-25 12:32:17", immat: "AA829VZ", marque: "MITSUBISHI", modele: "L200", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 7, dateCreation: "2026-04-25 12:27:33", immat: "AA677EY", marque: "MG", modele: "T60", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 8, dateCreation: "2026-04-25 12:22:43", immat: "855LY01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 9, dateCreation: "2026-04-25 12:19:04", immat: "2458KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 10, dateCreation: "2026-04-25 10:46:39", immat: "38LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 11, dateCreation: "2026-04-25 09:17:09", immat: "2502KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 12, dateCreation: "2026-04-24 08:40:03", immat: "AA601AF", marque: "CHANGAN", modele: "HUNTER", pannes: "FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport: "MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces: "MOTEUR + INJECTEURS + TURBOS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 13, dateCreation: "2026-04-23 13:43:35", immat: "5897HF01", marque: "TOYOTA", modele: "HILUX", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT 1" },
-        { nb: 14, dateCreation: "2026-04-23 13:21:34", immat: "6763JE01", marque: "MITSUBISHI", modele: "L200", pannes: "FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport: "MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces: "MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", positionGeo: "DEPOT 2" },
-        { nb: 15, dateCreation: "2026-04-23 13:12:31", immat: "58LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport: "MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces: "MOTEUR + INJECTEURS + TURBOS", positionGeo: "DEPOT 2" },
-        { nb: 16, dateCreation: "2026-04-21 17:14:21", immat: "64LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT AEROPORT" },
-        { nb: 17, dateCreation: "2026-04-21 14:36:31", immat: "221LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 18, dateCreation: "2026-04-20 14:39:31", immat: "2296KA01", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 19, dateCreation: "2026-04-16 15:53:20", immat: "AA153PG", marque: "MG", modele: "T60", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 20, dateCreation: "2026-04-16 12:36:47", immat: "2309KA01", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 21, dateCreation: "2026-04-07 15:08:33", immat: "AA248SX", marque: "MITSUBISHI", modele: "L200", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 22, dateCreation: "2026-04-07 12:40:54", immat: "7887JT01", marque: "BMW", modele: "520I", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 23, dateCreation: "2026-04-02 16:52:19", immat: "AA223LR", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 24, dateCreation: "2026-04-02 16:46:01", immat: "AA285AL", marque: "FORD", modele: "Territory", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 25, dateCreation: "2026-04-01 16:57:21", immat: "2303KA01", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 26, dateCreation: "2026-04-01 16:53:25", immat: "2467KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 27, dateCreation: "2026-04-01 11:47:26", immat: "2910KB01", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 28, dateCreation: "2026-04-01 09:11:21", immat: "94LL01", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 29, dateCreation: "2026-03-31 12:49:13", immat: "AA175PG", marque: "MG", modele: "T60", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 30, dateCreation: "2026-03-30 08:51:15", immat: "1922LZ01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 31, dateCreation: "2026-03-27 16:28:36", immat: "AA986PF", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 32, dateCreation: "2026-03-27 16:22:04", immat: "AA678BX", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 33, dateCreation: "2026-03-27 12:31:21", immat: "260LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport: "MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces: "MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo: "DEPOT AEROPORT" },
-        { nb: 34, dateCreation: "2026-03-26 16:40:27", immat: "2462KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport: "MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces: "MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo: "DEPOT 2" },
-        { nb: 35, dateCreation: "2026-03-26 15:44:57", immat: "2503KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport: "SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces: "MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo: "DEPOT 2" },
-        { nb: 36, dateCreation: "2026-03-25 17:12:37", immat: "862LY01", marque: "CHANGAN", modele: "HUNTER", pannes: "PANNE MOTEUR", rapport: "MANQUE DE PUISSANCE - FUMEE NOIRE", pieces: "MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo: "DEPOT 2" },
-        { nb: 37, dateCreation: "2026-03-25 17:09:33", immat: "75LL01", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "DIAGNOSTIC", rapport: "MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces: "MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 38, dateCreation: "2026-03-25 15:08:06", immat: "56LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "DIAGNOSTIC", rapport: "MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces: "MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 39, dateCreation: "2026-03-25 09:19:26", immat: "AA445CA", marque: "CHANGAN", modele: "CS 15", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 40, dateCreation: "2026-03-25 09:15:34", immat: "AA150CB", marque: "MG", modele: "T60", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 41, dateCreation: "2026-03-25 09:09:19", immat: "212JJ01", marque: "RENAULT", modele: "LOGAN", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 42, dateCreation: "2026-03-25 09:04:39", immat: "1207JP01", marque: "RENAULT", modele: "DUSTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 43, dateCreation: "2026-05-12 09:04:39", immat: "AA933VZ", marque: "DONGFENG", modele: "RICH6 ZNA", pannes: "", rapport: "", pieces: "", positionGeo: "UNITED MOTORS" },
-        { nb: 44, dateCreation: "2026-05-13 00:00:00", immat: "63LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "VEHICULE REMORQUE", rapport: "ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces: "MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo: "" },
-        { nb: 45, dateCreation: "2026-05-19 00:00:00", immat: "2467KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "VEHICULE REMORQUE", rapport: "PANNE MOTEUR", pieces: "MOTEUR + TURBO", positionGeo: "GARAGE 2" },
-        { nb: 46, dateCreation: "2026-05-20 00:00:00", immat: "2667KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "VEHICULE REMORQUE", rapport: "PANNE MOTEUR - VISTE TECHNIQUE", pieces: "", positionGeo: "DEPOT 1" },
-        { nb: 47, dateCreation: "2026-06-01 00:00:00", immat: "AA609VE", marque: "MITSUBISHI", modele: "L200", pannes: "PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport: "", pieces: "", positionGeo: "GARAGE 2" },
+        { nb: 4, dateCreation: "2026-04-28 14:50:06", immat: "41LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "BRUIT ANORMAL DANS LE MOTEUR", rapport: "BRUIT DE BIELLE", pieces: "MOTEUR + INJECTEURS", positionGeo: "DEPOT AEROPORT" },
+        { nb: 5, dateCreation: "2026-04-28 14:40:37", immat: "AA969LR", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "VEHICULE REMORQUE", rapport: "ABSENCE DU MOTEUR", pieces: "MOTEUR COMPLET", positionGeo: "DEPOT AEROPORT" }
       ];
 
-      // LISTES ACCESSOIRES & DOCUMENTS
       const accessoriesList = [
         "Roue de secours", "Cric", "Triangle", "Extincteur", "Trousse de secours", "Gilet jaune",
         "Manivelle", "Poste radio", "CD", "Radio VHF", "Clé de roue", "Enjoliveurs", "Tapis au sol", "Axe de remorquage"
@@ -588,8 +514,6 @@
         if (lower.includes("aeroport")) return { lat: 5.2614, lng: -3.9268, adresse: "Aéroport d'Abidjan" };
         if (lower.includes("depot 1")) return { lat: 5.3364, lng: -4.0267, adresse: "Dépôt 1, Abidjan" };
         if (lower.includes("depot 2")) return { lat: 5.3411, lng: -4.0211, adresse: "Dépôt 2, Abidjan" };
-        if (lower.includes("garage 2")) return { lat: 5.3497, lng: -4.0161, adresse: "Garage 2, Abidjan" };
-        if (lower.includes("united motors")) return { lat: 5.3542, lng: -4.0089, adresse: "United Motors, Abidjan" };
         return { lat: 5.3364, lng: -4.0267, adresse: pos || "Abidjan" };
       }
 
@@ -607,15 +531,40 @@
 
       function getEmptyVehicle(plaque, client, modele) {
         return {
-          id: Date.now().toString(),
-          client, plaque, marque: "", modele, statut: "Réceptionné",
+          id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+          client: client || "",
+          plaque: plaque || "",
+          marque: "",
+          modele: modele || "",
+          statut: "Réceptionné",
           dateCreation: new Date().toISOString().slice(0, 19).replace("T", " "),
-          dateLivraison: "", kilometrage: "", chassis: "", energie: "Diesel", niveauCarburant: "1/2",
-          miseEnService: "", proprietaireNom: "", proprietaireContact: "", chauffeurNom: "", chauffeurContact: "",
-          transmission: "Manuelle", couleur: "", puissance: "", finAssurance: "", finVignette: "",
-          travauxClient: "", rapportDiagnostic: "", pieces: "", observations: "", positionGeo: "",
-          position: DEFAULT_POSITION, adresseTexte: "Abidjan", accessoires: [], documents: [], photos: [],
-          numeroIntervention: "", history: [{ date: new Date().toISOString(), action: "Création dossier", status: "Réceptionné" }]
+          dateLivraison: "",
+          kilometrage: "",
+          chassis: "",
+          energie: "Diesel",
+          niveauCarburant: "1/2",
+          miseEnService: "",
+          proprietaireNom: "",
+          proprietaireContact: "",
+          chauffeurNom: "",
+          chauffeurContact: "",
+          transmission: "Manuelle",
+          couleur: "",
+          puissance: "",
+          finAssurance: "",
+          finVignette: "",
+          travauxClient: "",
+          rapportDiagnostic: "",
+          pieces: "",
+          observations: "",
+          positionGeo: "",
+          position: DEFAULT_POSITION,
+          adresseTexte: "Abidjan",
+          accessoires: [],
+          documents: [],
+          photos: [],
+          numeroIntervention: "",
+          history: [{ date: new Date().toISOString(), action: "Création dossier", status: "Réceptionné" }]
         };
       }
 
@@ -628,13 +577,24 @@
         if (data && JSON.parse(data).length > 0) {
           try {
             let loaded = JSON.parse(data);
-            vehicles = loaded.map(v => ({ ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || ""), ...v, accessoires: v.accessoires || [], documents: v.documents || [], photos: v.photos || [], history: v.history || [], numeroIntervention: v.numeroIntervention || "" }));
+            vehicles = loaded.map(v => ({ ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || ""), ...v }));
           } catch(e) { vehicles = []; }
         }
         if (!vehicles || vehicles.length === 0) {
           vehicles = bnetdRaw.map((row, idx) => {
             const pos = getCoordFromPositionGeo(row.positionGeo);
-            return { ...getEmptyVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`), id: `bnetd_${idx}`, dateCreation: row.dateCreation, marque: row.marque, modele: row.modele, travauxClient: row.pannes, rapportDiagnostic: row.rapport, pieces: row.pieces, positionGeo: row.positionGeo, position: pos, adresseTexte: pos.adresse, history: [{ date: new Date().toISOString(), action: "Import BNETD", status: "Réceptionné" }] };
+            return { ...getEmptyVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`), 
+              id: `bnetd_${idx}_${Date.now()}`,
+              dateCreation: row.dateCreation, 
+              marque: row.marque, 
+              modele: row.modele, 
+              travauxClient: row.pannes, 
+              rapportDiagnostic: row.rapport, 
+              pieces: row.pieces, 
+              positionGeo: row.positionGeo, 
+              position: pos, 
+              adresseTexte: pos.adresse 
+            };
           });
         }
         saveVehicles();
@@ -645,23 +605,40 @@
       function renderVehicleList() {
         const filterText = searchInput.value.toLowerCase();
         const filterStatus = statusFilter.value;
-        let filtered = vehicles.filter(v => (v.plaque.toLowerCase().includes(filterText) || v.client.toLowerCase().includes(filterText) || (v.modele && v.modele.toLowerCase().includes(filterText))) && (filterStatus === "all" || v.statut === filterStatus));
-        if (filtered.length === 0) { vehiclesListDiv.innerHTML = '<div class="placeholder">Aucun véhicule</div>'; return; }
+        let filtered = vehicles.filter(v => 
+          (v.plaque.toLowerCase().includes(filterText) || 
+           v.client.toLowerCase().includes(filterText) || 
+           (v.modele && v.modele.toLowerCase().includes(filterText))) && 
+          (filterStatus === "all" || v.statut === filterStatus)
+        );
+        
+        if (filtered.length === 0) { 
+          vehiclesListDiv.innerHTML = '<div class="placeholder">Aucun véhicule</div>'; 
+          return; 
+        }
+        
         vehiclesListDiv.innerHTML = filtered.map(v => `
           <div class="vehicle-card ${selectedVehicleId === v.id ? "selected" : ""}" data-id="${v.id}">
-            <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
-            <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)}</p>
+            <h4><i class="fas fa-car"></i> ${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
+            <p><i class="fas fa-tag"></i> ${escapeHtml(v.marque)} ${escapeHtml(v.modele)}</p>
             <div class="vehicle-card-footer">
-              <span class="status-badge"><i class="fas fa-tag"></i> ${v.statut}</span>
-              <span class="status-badge"><i class="fas fa-calendar-alt"></i> ${v.dateCreation?.split(" ")[0] || ""}</span>
+              <span class="status-badge"><i class="fas fa-chart-simple"></i> ${v.statut}</span>
+              <span class="status-badge"><i class="fas fa-calendar"></i> ${v.dateCreation?.split(" ")[0] || ""}</span>
+              ${v.numeroIntervention ? `<span class="status-badge"><i class="fas fa-hashtag"></i> ${v.numeroIntervention}</span>` : ''}
               ${v.photos?.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ""}
             </div>
           </div>
         `).join("");
-        document.querySelectorAll(".vehicle-card").forEach(card => card.addEventListener("click", () => selectVehicle(card.dataset.id)));
+        
+        document.querySelectorAll(".vehicle-card").forEach(card => 
+          card.addEventListener("click", () => selectVehicle(card.dataset.id))
+        );
       }
       
-      function escapeHtml(str) { if (!str) return ""; return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m]); }
+      function escapeHtml(str) { 
+        if (!str) return ""; 
+        return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m]); 
+      }
       
       function selectVehicle(id) { 
         selectedVehicleId = id; 
@@ -676,16 +653,76 @@
         placeholderDiv.style.display = "none";
         detailFormDiv.style.display = "block";
         const statusOptions = ["Réceptionné","Diagnostic en cours","En attente accord client","Travaux en cours","Prêt pour livraison","Livré"];
-        const photosHtml = (v.photos || []).map(p => `<img src="${p}" style="max-width:80px; max-height:80px; border-radius:8px; margin:5px;">`).join("");
-        let accessoriesHtml = '<div class="checkbox-group">'; accessoriesList.forEach(acc => { const checked = v.accessoires && v.accessoires.includes(acc) ? "checked" : ""; accessoriesHtml += `<label><input type="checkbox" class="accessoire-check" value="${acc}" ${checked}> ${acc}</label>`; }); accessoriesHtml += "</div>";
-        let documentsHtml = '<div class="checkbox-group">'; documentsList.forEach(doc => { const checked = v.documents && v.documents.includes(doc) ? "checked" : ""; documentsHtml += `<label><input type="checkbox" class="document-check" value="${doc}" ${checked}> ${doc}</label>`; }); documentsHtml += "</div>";
+        const photosHtml = (v.photos || []).map(p => `<img src="${p}">`).join("");
+        let accessoriesHtml = '<div class="checkbox-group">'; 
+        accessoriesList.forEach(acc => { 
+          const checked = v.accessoires && v.accessoires.includes(acc) ? "checked" : ""; 
+          accessoriesHtml += `<label><input type="checkbox" class="accessoire-check" value="${acc}" ${checked}> ${acc}</label>`; 
+        }); 
+        accessoriesHtml += "</div>";
+        let documentsHtml = '<div class="checkbox-group">'; 
+        documentsList.forEach(doc => { 
+          const checked = v.documents && v.documents.includes(doc) ? "checked" : ""; 
+          documentsHtml += `<label><input type="checkbox" class="document-check" value="${doc}" ${checked}> ${doc}</label>`; 
+        }); 
+        documentsHtml += "</div>";
         
-        detailFormDiv.innerHTML = `<h2>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h2><div class="form-row"><div class="form-group"><label>Numéro intervention</label><input type="text" id="detailNumeroIntervention" value="${escapeHtml(v.numeroIntervention || "")}"></div><div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s => `<option ${v.statut === s ? "selected" : ""}>${s}</option>`).join("")}</select></div><div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(" ", "T") || ""}"></div></div><div class="form-row"><div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(" ", "T") || ""}"></div><div class="form-group"><label>Immatriculation</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}"></div><div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div></div><div class="form-row"><div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div><div class="form-group"><label>Kilométrage</label><input type="number" id="detailKilometrage" value="${v.kilometrage || ""}"></div><div class="form-group"><label>N° Châssis</label><input type="text" id="detailChassis" value="${escapeHtml(v.chassis || "")}"></div></div><div class="form-row"><div class="form-group"><label>Énergie</label><select id="detailEnergie"><option ${v.energie === "Essence" ? "selected" : ""}>Essence</option><option ${v.energie === "Diesel" ? "selected" : ""}>Diesel</option><option ${v.energie === "Électrique" ? "selected" : ""}>Électrique</option><option ${v.energie === "Hybride" ? "selected" : ""}>Hybride</option></select></div><div class="form-group"><label>Niveau carburant</label><select id="detailNiveauCarburant"><option ${v.niveauCarburant === "Vide" ? "selected" : ""}>Vide</option><option ${v.niveauCarburant === "1/4" ? "selected" : ""}>1/4</option><option ${v.niveauCarburant === "1/2" ? "selected" : ""}>1/2</option><option ${v.niveauCarburant === "3/4" ? "selected" : ""}>3/4</option><option ${v.niveauCarburant === "Plein" ? "selected" : ""}>Plein</option></select></div><div class="form-group"><label>Mise en service</label><input type="date" id="detailMiseEnService" value="${v.miseEnService || ""}"></div></div><div class="form-row"><div class="form-group"><label>Transmission</label><select id="detailTransmission"><option ${v.transmission === "Manuelle" ? "selected" : ""}>Manuelle</option><option ${v.transmission === "Automatique" ? "selected" : ""}>Automatique</option></select></div><div class="form-group"><label>Couleur</label><input type="text" id="detailCouleur" value="${escapeHtml(v.couleur || "")}"></div><div class="form-group"><label>Puissance (ch)</label><input type="text" id="detailPuissance" value="${escapeHtml(v.puissance || "")}"></div></div><div class="form-row"><div class="form-group"><label>Nom propriétaire</label><input type="text" id="detailProprietaireNom" value="${escapeHtml(v.proprietaireNom || "")}"></div><div class="form-group"><label>Contact propriétaire</label><input type="tel" id="detailProprietaireContact" value="${escapeHtml(v.proprietaireContact || "")}"></div></div><div class="form-row"><div class="form-group"><label>Nom chauffeur déposant</label><input type="text" id="detailChauffeurNom" value="${escapeHtml(v.chauffeurNom || "")}"></div><div class="form-group"><label>Contact chauffeur</label><input type="tel" id="detailChauffeurContact" value="${escapeHtml(v.chauffeurContact || "")}"></div></div><div class="form-row"><div class="form-group"><label>Fin assurance</label><input type="date" id="detailFinAssurance" value="${v.finAssurance || ""}"></div><div class="form-group"><label>Fin vignette</label><input type="date" id="detailFinVignette" value="${v.finVignette || ""}"></div></div><div class="form-group"><label>Pannes signalées (client)</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient || "")}</textarea></div><div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic || "")}</textarea></div><div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces || "")}</textarea></div><div class="form-group"><label>Autres observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations || "")}</textarea></div><div class="form-group"><label>Accessoires de bord</label>${accessoriesHtml}</div><div class="form-group"><label>Documents fournis</label>${documentsHtml}</div><div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo || "")}"></div><div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div><div class="form-group"><label>Carte</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button></div><div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger">Supprimer</button><button id="saveDetailBtn" class="btn-primary">Enregistrer</button></div>`;
+        detailFormDiv.innerHTML = `
+          <h2><i class="fas fa-truck"></i> ${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h2>
+          <div class="form-row">
+            <div class="form-group"><label>Numéro intervention</label><input type="text" id="detailNumeroIntervention" value="${escapeHtml(v.numeroIntervention || "")}"></div>
+            <div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s => `<option ${v.statut === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>
+            <div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(" ", "T") || ""}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(" ", "T") || ""}"></div>
+            <div class="form-group"><label>Immatriculation</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}"></div>
+            <div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div>
+            <div class="form-group"><label>Kilométrage</label><input type="number" id="detailKilometrage" value="${v.kilometrage || ""}"></div>
+            <div class="form-group"><label>N° Châssis</label><input type="text" id="detailChassis" value="${escapeHtml(v.chassis || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Énergie</label><select id="detailEnergie"><option ${v.energie === "Essence" ? "selected" : ""}>Essence</option><option ${v.energie === "Diesel" ? "selected" : ""}>Diesel</option><option ${v.energie === "Électrique" ? "selected" : ""}>Électrique</option><option ${v.energie === "Hybride" ? "selected" : ""}>Hybride</option></select></div>
+            <div class="form-group"><label>Niveau carburant</label><select id="detailNiveauCarburant"><option ${v.niveauCarburant === "Vide" ? "selected" : ""}>Vide</option><option ${v.niveauCarburant === "1/4" ? "selected" : ""}>1/4</option><option ${v.niveauCarburant === "1/2" ? "selected" : ""}>1/2</option><option ${v.niveauCarburant === "3/4" ? "selected" : ""}>3/4</option><option ${v.niveauCarburant === "Plein" ? "selected" : ""}>Plein</option></select></div>
+            <div class="form-group"><label>Mise en service</label><input type="date" id="detailMiseEnService" value="${v.miseEnService || ""}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Transmission</label><select id="detailTransmission"><option ${v.transmission === "Manuelle" ? "selected" : ""}>Manuelle</option><option ${v.transmission === "Automatique" ? "selected" : ""}>Automatique</option></select></div>
+            <div class="form-group"><label>Couleur</label><input type="text" id="detailCouleur" value="${escapeHtml(v.couleur || "")}"></div>
+            <div class="form-group"><label>Puissance (ch)</label><input type="text" id="detailPuissance" value="${escapeHtml(v.puissance || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Nom propriétaire</label><input type="text" id="detailProprietaireNom" value="${escapeHtml(v.proprietaireNom || "")}"></div>
+            <div class="form-group"><label>Contact propriétaire</label><input type="tel" id="detailProprietaireContact" value="${escapeHtml(v.proprietaireContact || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Nom chauffeur déposant</label><input type="text" id="detailChauffeurNom" value="${escapeHtml(v.chauffeurNom || "")}"></div>
+            <div class="form-group"><label>Contact chauffeur</label><input type="tel" id="detailChauffeurContact" value="${escapeHtml(v.chauffeurContact || "")}"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Fin assurance</label><input type="date" id="detailFinAssurance" value="${v.finAssurance || ""}"></div>
+            <div class="form-group"><label>Fin vignette</label><input type="date" id="detailFinVignette" value="${v.finVignette || ""}"></div>
+          </div>
+          <div class="form-group"><label>Pannes signalées (client)</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient || "")}</textarea></div>
+          <div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic || "")}</textarea></div>
+          <div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces || "")}</textarea></div>
+          <div class="form-group"><label>Autres observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations || "")}</textarea></div>
+          <div class="form-group"><label>Accessoires de bord</label>${accessoriesHtml}</div>
+          <div class="form-group"><label>Documents fournis</label>${documentsHtml}</div>
+          <div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo || "")}"></div>
+          <div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
+          <div class="form-group"><label>Carte</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button></div>
+          <div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger"><i class="fas fa-trash"></i> Supprimer</button><button id="saveDetailBtn" class="btn-primary"><i class="fas fa-save"></i> Enregistrer</button></div>
+        `;
         setTimeout(() => initMap(v.position), 100);
         document.getElementById("saveDetailBtn").addEventListener("click", () => saveVehicleDetails(v.id));
         document.getElementById("deleteVehicleBtn").addEventListener("click", () => deleteVehicle(v.id));
         document.getElementById("getCurrentPosBtn").addEventListener("click", () => getCurrentLocationForVehicle(v.id));
-        const up = document.getElementById("photoUpload"); if(up) up.addEventListener("change", (e) => handlePhotoUpload(v.id, e.target.files));
+        const up = document.getElementById("photoUpload"); 
+        if(up) up.addEventListener("change", (e) => handlePhotoUpload(v.id, e.target.files));
       }
       
       function handlePhotoUpload(id, files) {
@@ -700,10 +737,13 @@
               if (pv) {
                 let img = document.createElement("img");
                 img.src = e.target.result;
-                img.style.maxWidth = "80px";
+                img.style.width = "70px";
+                img.style.height = "70px";
+                img.style.objectFit = "cover";
+                img.style.borderRadius = "8px";
                 pv.appendChild(img);
               }
-              showNotification("Photo ajoutée avec succès");
+              showNotification("Photo ajoutée");
             };
             r.readAsDataURL(f);
           });
@@ -725,10 +765,6 @@
         if (v) {
           v.position = { lat: coords.lat, lng: coords.lng };
           saveVehicles();
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18`)
-            .then(r => r.json())
-            .then(d => { if (d.display_name) { v.adresseTexte = d.display_name.substring(0, 100); saveVehicles(); } })
-            .catch(() => {});
           showNotification("Position mise à jour");
         }
       }
@@ -777,7 +813,7 @@
         v.documents = Array.from(document.querySelectorAll(".document-check:checked")).map(cb => cb.value);
         saveVehicles(); 
         renderVehicleList(); 
-        showNotification("Véhicule enregistré avec succès");
+        showNotification("Véhicule enregistré");
       }
       
       function deleteVehicle(id) { 
@@ -800,67 +836,106 @@
         saveVehicles(); 
         renderVehicleList(); 
         selectVehicle(newVehicle.id);
-        showNotification("Nouveau véhicule créé avec succès");
+        showNotification("Nouveau véhicule créé");
       }
 
-      // ======================== IMPORT EXCEL ODOO ========================
-      function importFromOdoo() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".xlsx, .xls, .csv";
-        input.onchange = (e) => {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            try {
-              const data = new Uint8Array(ev.target.result);
-              const workbook = XLSX.read(data, { type: 'array' });
-              const sheet = workbook.Sheets[workbook.SheetNames[0]];
-              const rows = XLSX.utils.sheet_to_json(sheet);
-              
-              let imported = 0;
-              for (const row of rows) {
-                // Mapping intelligent des colonnes Odoo
-                const plaque = row['Immatriculation'] || row['immatriculation'] || row['Plaque'] || row['plaque'] || row['Immat'] || '';
-                const client = row['Client'] || row['client'] || row['Nom client'] || row['CLIENT'] || '';
-                const modele = row['Modèle'] || row['modèle'] || row['Modele'] || row['modele'] || row['Marque'] || '';
-                const marque = row['Marque'] || row['marque'] || '';
-                const dateCreation = row['Date création'] || row['date création'] || row['Date de création'] || new Date().toISOString().slice(0,19).replace("T", " ");
-                const statut = row['Statut'] || row['statut'] || "Réceptionné";
-                const travauxClient = row['Pannes'] || row['pannes'] || row['Description'] || '';
-                const rapportDiagnostic = row['Diagnostic'] || row['diagnostic'] || '';
-                const pieces = row['Pièces'] || row['pièces'] || '';
-                
-                if (plaque && client) {
-                  const newVehicle = getEmptyVehicle(plaque, client, modele);
-                  if (marque) newVehicle.marque = marque;
-                  if (dateCreation && dateCreation !== newVehicle.dateCreation) newVehicle.dateCreation = dateCreation;
-                  if (statut) newVehicle.statut = statut;
-                  if (travauxClient) newVehicle.travauxClient = travauxClient;
-                  if (rapportDiagnostic) newVehicle.rapportDiagnostic = rapportDiagnostic;
-                  if (pieces) newVehicle.pieces = pieces;
-                  vehicles.push(newVehicle);
-                  imported++;
-                }
-              }
-              if (imported > 0) {
-                saveVehicles();
-                renderVehicleList();
-                showNotification(`${imported} véhicules importés avec succès depuis Odoo`);
-              } else {
-                showNotification("Aucun véhicule valide trouvé dans le fichier", true);
-              }
-            } catch(err) {
-              console.error(err);
-              showNotification("Erreur lors de l'import du fichier", true);
-            }
-          };
-          reader.readAsArrayBuffer(file);
-        };
-        input.click();
+      // ======================== EXPORTS PDF CORRIGÉS ========================
+      function generatePDFContent(list, title, isFullReport = false) {
+        const now = new Date();
+        let html = `
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>${title}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              h1 { color: #0a2942; text-align: center; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .date { color: #666; font-size: 12px; text-align: center; margin-bottom: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th { background: #0a2942; color: white; padding: 10px; text-align: left; }
+              td { padding: 8px; border-bottom: 1px solid #ddd; }
+              tr:nth-child(even) { background: #f9f9f9; }
+              .footer { text-align: center; margin-top: 30px; font-size: 10px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>${title}</h1>
+              <div class="date">Généré le ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}</div>
+              <div>Total: ${list.length} véhicule(s)</div>
+            </div>
+        `;
+        
+        if (isFullReport) {
+          html += `
+            <table>
+              <thead>
+                <tr><th>#</th><th>N° Intervention</th><th>Client</th><th>Date création</th><th>Date livraison</th><th>Immatriculation</th><th>Marque</th><th>Modèle</th><th>Statut</th><th>Position</th></tr>
+              </thead>
+              <tbody>
+          `;
+          list.forEach((v, idx) => {
+            html += `<tr>
+              <td>${idx+1}</td>
+              <td>${escapeHtml(v.numeroIntervention || '-')}</td>
+              <td>${escapeHtml(v.client)}</td>
+              <td>${v.dateCreation?.split(' ')[0] || '-'}</td>
+              <td>${v.dateLivraison?.split(' ')[0] || '-'}</td>
+              <td>${escapeHtml(v.plaque)}</td>
+              <td>${escapeHtml(v.marque || '-')}</td>
+              <td>${escapeHtml(v.modele || '-')}</td>
+              <td>${v.statut}</td>
+              <td>${escapeHtml(v.positionGeo || '-')}</td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        } else {
+          html += `
+            <table>
+              <thead><tr><th>#</th><th>N° Intervention</th><th>Client</th><th>Immatriculation</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
+              <tbody>
+          `;
+          list.forEach((v, idx) => {
+            html += `<tr>
+              <td>${idx+1}</td>
+              <td>${escapeHtml(v.numeroIntervention || '-')}</td>
+              <td>${escapeHtml(v.client)}</td>
+              <td>${escapeHtml(v.plaque)}</td>
+              <td>${escapeHtml(v.marque || '-')}</td>
+              <td>${escapeHtml(v.modele || '-')}</td>
+              <td>${v.statut}</td>
+            </tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+        
+        html += `<div class="footer">Document généré par BNETD TRACKER</div></body></html>`;
+        return html;
       }
-
-      // Exports principaux
+      
+      function exportToPDF() {
+        const content = generatePDFContent(vehicles, "LISTE COMPLÈTE DES VÉHICULES", true);
+        const win = window.open();
+        win.document.write(content);
+        win.document.close();
+        setTimeout(() => {
+          win.print();
+          showNotification("Export PDF lancé");
+        }, 500);
+      }
+      
+      function exportListToPdf(list, filename, title) {
+        const content = generatePDFContent(list, title, false);
+        const win = window.open();
+        win.document.write(content);
+        win.document.close();
+        setTimeout(() => {
+          win.print();
+          showNotification(`Export ${filename} PDF lancé`);
+        }, 500);
+      }
+      
       function exportToExcel() {
         const data = vehicles.map((v, idx) => ({
           NB: idx+1,
@@ -873,7 +948,7 @@
           Modèle: v.modele,
           "PANNES SIGNALEES": v.travauxClient || "",
           "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
-          "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
+          "PIECES": v.pieces || "",
           STATUT: v.statut,
           "POSITION GEO": v.positionGeo || "",
         }));
@@ -884,79 +959,53 @@
         showNotification("Export Excel effectué");
       }
       
-      function exportToPDF() {
-        const element = document.createElement("div");
-        element.style.position = "absolute";
-        element.style.left = "-9999px";
-        element.style.top = "0";
-        element.style.padding = "1rem";
-        element.style.fontFamily = "'Segoe UI', 'Arial', sans-serif";
-        element.style.backgroundColor = "#fff";
-        const total = vehicles.length, received = vehicles.filter(v => v.statut === "Réceptionné").length, delivered = vehicles.filter(v => v.statut === "Livré").length;
-        let html = `<div style="margin-bottom:1.5rem;text-align:center;"><h1 style="color:#1e3c72;">SUIVI DES VÉHICULES</h1><p style="font-size:0.9rem;">BNETD / GARAGE - Export ${new Date().toLocaleString()}</p><hr style="border:1px solid #ff9800;width:80px;margin:0.5rem auto;"><div style="display:flex;justify-content:center;gap:1.5rem;"><div style="background:#eef2ff;padding:0.3rem 0.8rem;border-radius:20px;">📦 Total : ${total}</div><div style="background:#eef2ff;padding:0.3rem 0.8rem;border-radius:20px;">📥 Réceptionnés : ${received}</div><div style="background:#eef2ff;padding:0.3rem 0.8rem;border-radius:20px;">🏁 Livrés : ${delivered}</div></div></div><table style="width:100%;border-collapse:collapse;font-size:0.7rem;"><thead><tr style="background-color:#1e3c72;color:white;"><th style="padding:8px 4px;border:1px solid #ddd;">#</th><th style="padding:8px 4px;border:1px solid #ddd;">N° Intervention</th><th style="padding:8px 4px;border:1px solid #ddd;">Client</th><th style="padding:8px 4px;border:1px solid #ddd;">Date création</th><th style="padding:8px 4px;border:1px solid #ddd;">Date livraison</th><th style="padding:8px 4px;border:1px solid #ddd;">Immatriculation</th><th style="padding:8px 4px;border:1px solid #ddd;">Marque</th><th style="padding:8px 4px;border:1px solid #ddd;">Modèle</th><th style="padding:8px 4px;border:1px solid #ddd;">Pannes signalées</th><th style="padding:8px 4px;border:1px solid #ddd;">Rapport diagnostic</th><th style="padding:8px 4px;border:1px solid #ddd;">Pièces à remplacer</th><th style="padding:8px 4px;border:1px solid #ddd;">Statut</th><th style="padding:8px 4px;border:1px solid #ddd;">Position GEO</th></tr></thead><tbody>`;
-        vehicles.forEach((v, idx) => { html += `<tr style="background-color:${idx%2===0?"#f9fafb":"#ffffff"};"><td style="padding:6px 4px;border:1px solid #ddd;">${idx+1}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.numeroIntervention || "")}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.client)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.dateCreation || ""}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.dateLivraison || ""}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.plaque)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.marque)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.modele)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.travauxClient || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.rapportDiagnostic || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.pieces || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.statut}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.positionGeo || "")}</td></tr>`; });
-        html += `</tbody></table><div style="margin-top:1rem;font-size:0.6rem;text-align:center;">Document généré automatiquement par BNETD TRACKER</div>`;
-        element.innerHTML = html;
-        document.body.appendChild(element);
-        html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `BNETD_export_${new Date().toISOString().slice(0,10)}.pdf`, image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: "in", format: "a4", orientation: "landscape" } }).save().then(() => { element.remove(); showNotification("Export PDF effectué"); });
-      }
-
-      // Exports spécifiques
-      function exportListToExcel(list, filename, sheetName) {
+      function exportListToExcel(list, filename) {
         const data = list.map((v, idx) => ({
           NB: idx+1,
           "Numéro intervention": v.numeroIntervention || "",
-          CLIENT: v.client,
-          "Date de création": v.dateCreation || "",
-          "Date de Livraison": v.dateLivraison || "",
+          Client: v.client,
           Immatriculation: v.plaque,
           Marque: v.marque,
           Modèle: v.modele,
-          "PANNES SIGNALEES": v.travauxClient || "",
-          "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
-          "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
-          STATUT: v.statut,
-          "POSITION GEO": v.positionGeo || "",
+          Statut: v.statut,
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, sheetName || "export");
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
         XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
-        showNotification(`Export ${filename} effectué`);
-      }
-      
-      function exportListToPdf(list, filename, title) {
-        const element = document.createElement("div");
-        element.style.position = "absolute";
-        element.style.left = "-9999px";
-        element.style.top = "0";
-        element.style.padding = "1rem";
-        element.style.fontFamily = "'Segoe UI', 'Arial', sans-serif";
-        element.style.backgroundColor = "#fff";
-        const total = list.length;
-        let html = `<div style="margin-bottom:1.5rem;text-align:center;"><h1 style="color:#1e3c72;">${title}</h1><p style="font-size:0.9rem;">Export généré le ${new Date().toLocaleString()}</p><hr style="border:1px solid #ff9800;width:80px;margin:0.5rem auto;"><div style="display:flex;justify-content:center;gap:1.5rem;"><div style="background:#eef2ff;padding:0.3rem 0.8rem;border-radius:20px;">📦 Total : ${total}</div></div></div><table style="width:100%;border-collapse:collapse;font-size:0.7rem;"><thead><tr style="background-color:#1e3c72;color:white;"><th style="padding:8px 4px;border:1px solid #ddd;">#</th><th style="padding:8px 4px;border:1px solid #ddd;">N° Intervention</th><th style="padding:8px 4px;border:1px solid #ddd;">Client</th><th style="padding:8px 4px;border:1px solid #ddd;">Date création</th><th style="padding:8px 4px;border:1px solid #ddd;">Date livraison</th><th style="padding:8px 4px;border:1px solid #ddd;">Immatriculation</th><th style="padding:8px 4px;border:1px solid #ddd;">Marque</th><th style="padding:8px 4px;border:1px solid #ddd;">Modèle</th><th style="padding:8px 4px;border:1px solid #ddd;">Pannes signalées</th><th style="padding:8px 4px;border:1px solid #ddd;">Rapport diagnostic</th><th style="padding:8px 4px;border:1px solid #ddd;">Pièces à remplacer</th><th style="padding:8px 4px;border:1px solid #ddd;">Statut</th><th style="padding:8px 4px;border:1px solid #ddd;">Position GEO</th></tr></thead><tbody>`;
-        list.forEach((v, idx) => { html += `<tr style="background-color:${idx%2===0?"#f9fafb":"#ffffff"};"><td style="padding:6px 4px;border:1px solid #ddd;">${idx+1}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.numeroIntervention || "")}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.client)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.dateCreation || ""}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.dateLivraison || ""}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.plaque)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.marque)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.modele)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.travauxClient || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.rapportDiagnostic || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.pieces || "").substring(0,60)}</td><td style="padding:6px 4px;border:1px solid #ddd;">${v.statut}</td><td style="padding:6px 4px;border:1px solid #ddd;">${escapeHtml(v.positionGeo || "")}</td></tr>`; });
-        html += `</tbody></table><div style="margin-top:1rem;font-size:0.6rem;text-align:center;">Document généré automatiquement par BNETD TRACKER</div>`;
-        element.innerHTML = html;
-        document.body.appendChild(element);
-        html2pdf().from(element).set({ margin: [0.5,0.5,0.5,0.5], filename: `${filename}_${new Date().toISOString().slice(0,10)}.pdf`, image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: "in", format: "a4", orientation: "landscape" } }).save().then(() => { element.remove(); showNotification(`Export ${filename} PDF effectué`); });
+        showNotification(`Export ${filename} Excel effectué`);
       }
 
       function renderDashboard() {
         const total = vehicles.length;
-        const statusCount = {};
-        vehicles.forEach(v => { statusCount[v.statut] = (statusCount[v.statut] || 0) + 1; });
-        document.getElementById("statsContainer").innerHTML = `<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-number">${statusCount["Réceptionné"] || 0}</div><div class="stat-label">Réceptionné</div></div><div class="stat-card"><div class="stat-number">${statusCount["Diagnostic en cours"] || 0}</div><div class="stat-label">Diagnostic</div></div><div class="stat-card"><div class="stat-number">${statusCount["En attente accord client"] || 0}</div><div class="stat-label">Attente accord</div></div><div class="stat-card"><div class="stat-number">${statusCount["Travaux en cours"] || 0}</div><div class="stat-label">Travaux</div></div><div class="stat-card"><div class="stat-number">${statusCount["Prêt pour livraison"] || 0}</div><div class="stat-label">Prêt livraison</div></div><div class="stat-card"><div class="stat-number">${statusCount["Livré"] || 0}</div><div class="stat-label">Livrés</div></div>`;
+        const statusCount = { "Réceptionné":0, "Diagnostic en cours":0, "En attente accord client":0, "Travaux en cours":0, "Prêt pour livraison":0, "Livré":0 };
+        vehicles.forEach(v => { if(statusCount[v.statut] !== undefined) statusCount[v.statut]++; });
         
-        const pending = vehicles.filter(v => v.statut !== "Livré" && (!v.dateLivraison || v.dateLivraison === ""));
-        document.getElementById("pendingAccordContainer").innerHTML = `<div class="stat-card" style="grid-column: span 2;"><div class="stat-label">🚚 Non livrés (${pending.length})</div><div class="pending-list"><ul>${pending.map(v => `<li>${v.plaque} - ${v.client} (${v.statut})</li>`).join("")}</ul></div></div>`;
-        document.getElementById("chartContainer").innerHTML = `<h3>Répartition</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v]) => `<div style="background:#eef2f5; padding:5px 12px; border-radius:20px;">${k} (${v})</div>`).join("")}</div>`;
+        document.getElementById("statsContainer").innerHTML = `
+          <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["Réceptionné"]}</div><div class="stat-label">Réceptionné</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["Diagnostic en cours"]}</div><div class="stat-label">Diagnostic</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["En attente accord client"]}</div><div class="stat-label">Attente accord</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["Travaux en cours"]}</div><div class="stat-label">Travaux</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["Prêt pour livraison"]}</div><div class="stat-label">Prêt livraison</div></div>
+          <div class="stat-card"><div class="stat-number">${statusCount["Livré"]}</div><div class="stat-label">Livrés</div></div>
+        `;
+        
+        const pending = vehicles.filter(v => v.statut !== "Livré");
+        document.getElementById("pendingAccordContainer").innerHTML = `<div class="stat-card"><div class="stat-label">🚚 Non livrés</div><div class="stat-number">${pending.length}</div><div class="pending-list"><ul>${pending.slice(0,10).map(v => `<li>${v.plaque} - ${v.client} (${v.statut})</li>`).join("")}${pending.length>10 ? '<li>...</li>' : ''}</ul></div></div>`;
         
         const withoutIntervention = vehicles.filter(v => !v.numeroIntervention || v.numeroIntervention.trim() === "");
         document.getElementById("countNoIntervention").innerText = withoutIntervention.length;
-        document.getElementById("exportNoInterventionExcel").onclick = () => exportListToExcel(withoutIntervention, "sans_intervention", "Sans_intervention");
-        document.getElementById("exportNoInterventionPdf").onclick = () => exportListToPdf(withoutIntervention, "sans_intervention", "Véhicules sans numéro d'intervention");
-
+        document.getElementById("exportNoInterventionExcel").onclick = () => exportListToExcel(withoutIntervention, "sans_intervention");
+        document.getElementById("exportNoInterventionPdf").onclick = () => exportListToPdf(withoutIntervention, "sans_intervention", "Véhicules sans intervention");
+        
+        const livres = vehicles.filter(v => v.statut === "Livré");
+        const nonLivres = vehicles.filter(v => v.statut !== "Livré");
+        document.getElementById("exportLivresExcel").onclick = () => exportListToExcel(livres, "livres");
+        document.getElementById("exportLivresPdf").onclick = () => exportListToPdf(livres, "livres", "Véhicules livrés");
+        document.getElementById("exportNonLivresExcel").onclick = () => exportListToExcel(nonLivres, "non_livres");
+        document.getElementById("exportNonLivresPdf").onclick = () => exportListToPdf(nonLivres, "non_livres", "Véhicules non livrés");
+        
         const delayDays = parseInt(document.getElementById("delaySelect").value);
         const now = new Date();
         const overdue = vehicles.filter(v => {
@@ -967,17 +1016,11 @@
           return diffDays > delayDays;
         });
         document.getElementById("countOverdue").innerText = overdue.length;
-        const previewHtml = overdue.slice(0,10).map(v => `<li>${v.plaque} - ${v.client} (créé le ${v.dateCreation?.split(" ")[0]})</li>`).join("");
-        document.getElementById("overdueListPreview").innerHTML = `<ul>${previewHtml || "<li>Aucun</li>"}</ul>`;
-        document.getElementById("exportOverdueExcel").onclick = () => exportListToExcel(overdue, "retard_livraison", "Retard_livraison");
-        document.getElementById("exportOverduePdf").onclick = () => exportListToPdf(overdue, "retard_livraison", "Véhicules non livrés en retard");
-
-        const livres = vehicles.filter(v => v.statut === "Livré");
-        const nonLivres = vehicles.filter(v => v.statut !== "Livré");
-        document.getElementById("exportLivresExcel").onclick = () => exportListToExcel(livres, "livres", "Vehicules_livres");
-        document.getElementById("exportLivresPdf").onclick = () => exportListToPdf(livres, "livres", "Véhicules livrés");
-        document.getElementById("exportNonLivresExcel").onclick = () => exportListToExcel(nonLivres, "non_livres", "Vehicules_non_livres");
-        document.getElementById("exportNonLivresPdf").onclick = () => exportListToPdf(nonLivres, "non_livres", "Véhicules non livrés");
+        document.getElementById("overdueListPreview").innerHTML = `<ul>${overdue.slice(0,10).map(v => `<li>${v.plaque} - ${v.client}</li>`).join("")}</ul>`;
+        document.getElementById("exportOverdueExcel").onclick = () => exportListToExcel(overdue, "retard");
+        document.getElementById("exportOverduePdf").onclick = () => exportListToPdf(overdue, "retard", "Véhicules en retard");
+        
+        document.getElementById("chartContainer").innerHTML = `<h3>Répartition</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v]) => `<div style="background:#eef2f5; padding:5px 12px; border-radius:20px;">${k}: ${v}</div>`).join("")}</div>`;
       }
 
       function backupData() { 
@@ -986,7 +1029,7 @@
         const url = URL.createObjectURL(blob); 
         const a = document.createElement("a"); 
         a.href = url; 
-        a.download = `sauvegarde_SAV_${new Date().toISOString().slice(0,19)}.json`; 
+        a.download = `sauvegarde_${new Date().toISOString().slice(0,19)}.json`; 
         a.click(); 
         URL.revokeObjectURL(url);
         showNotification("Sauvegarde effectuée");
@@ -1003,11 +1046,11 @@
             try { 
               const restored = JSON.parse(ev.target.result); 
               if (!Array.isArray(restored)) throw new Error(); 
-              const migrated = restored.map(v => ({ ...getEmptyVehicle(v.plaque||"", v.client||"", v.modele||""), ...v, accessoires: v.accessoires||[], documents: v.documents||[], photos: v.photos||[], history: v.history||[], numeroIntervention: v.numeroIntervention||"" })); 
-              vehicles = migrated; 
+              vehicles = restored; 
               saveVehicles(); 
               renderVehicleList(); 
               showNotification("Restauration réussie !");
+              if (document.getElementById("tab-dashboard").style.display === "block") renderDashboard();
             } catch(err) { 
               showNotification("Fichier invalide", true);
             } 
@@ -1034,7 +1077,6 @@
       
       document.getElementById("addVehicleBtn").onclick = () => addModal.style.display = "block";
       document.querySelector(".close").onclick = () => addModal.style.display = "none";
-      document.getElementById("importExcelBtn").onclick = () => importFromOdoo();
       window.onclick = (e) => { if (e.target === addModal) addModal.style.display = "none"; };
       document.getElementById("quickAddForm").onsubmit = (e) => { 
         e.preventDefault(); 
@@ -1059,11 +1101,8 @@
       
       loadVehicles();
 
-      // Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service worker enregistré', reg))
-          .catch(err => console.error('Erreur SW', err));
+        navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW error', err));
       }
     </script>
   </body>
