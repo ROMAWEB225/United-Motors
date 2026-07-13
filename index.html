@@ -31,7 +31,8 @@
     .search { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; }
     .search input, .search select { flex:1; padding:0.5rem; border:1px solid #cbd5e1; border-radius:20px; }
     .vehicles { display:flex; flex-direction:column; gap:0.75rem; }
-    .card { background:#f8fafc; border-left:5px solid #ff9800; padding:0.8rem; border-radius:16px; cursor:pointer; }
+    .card { background:#f8fafc; border-left:5px solid #ff9800; padding:0.8rem; border-radius:16px; cursor:pointer; transition:0.1s; }
+    .card:hover { background:#eef2ff; }
     .card.selected { background:#eef2ff; border-left-color:#1e3c72; }
     .card h4 { margin-bottom:0.2rem; }
     .card p { font-size:0.8rem; color:#334155; }
@@ -119,18 +120,7 @@
 
 <div id="importModal" class="modal">
   <div class="modal-content"><span class="close">&times;</span><h2>Importer un fichier Excel</h2>
-    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules. Les colonnes doivent correspondre aux noms exacts :</p>
-    <ul style="font-size:0.9rem; margin:0.5rem 0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0.2rem 1rem;">
-      <li><strong>Client</strong></li><li><strong>Date de création</strong></li>
-      <li><strong>Date de Livraison</strong></li><li><strong>Immatriculation</strong></li>
-      <li><strong>Marque</strong></li><li><strong>Modele</strong></li>
-      <li><strong>Référence de commande</strong></li><li><strong>Type de Maintenance</strong></li>
-      <li><strong>Kilométrage</strong></li><li><strong>N° Châssis</strong></li>
-      <li><strong>Energie</strong></li><li><strong>Niveau de carburant</strong></li>
-      <li><strong>Mise en Service</strong></li><li><strong>Couleur(Externe)</strong></li>
-      <li><strong>Contact Chauffeur Déposant</strong></li><li><strong>Objet de la visite</strong></li>
-      <li><strong>Autres observations</strong></li>
-    </ul>
+    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules.</p>
     <input type="file" id="fileInput" accept=".xlsx,.xls"><br><br>
     <button id="importConfirmBtn" class="btn">Importer</button>
   </div>
@@ -139,7 +129,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - CORRECTION DU RAFFRAÎCHISSEMENT      *
+ *  SAV FLEET MANAGER - VERSION STABLE                       *
  ************************************************************/
 
 // ---------- CONFIG ----------
@@ -195,14 +185,13 @@ function parseDate(val) {
   return str;
 }
 
-function splitList(str) {
-  if (!str) return [];
-  return String(str).split(',').map(s => s.trim()).filter(Boolean);
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
 function newVehicle(plaque, societe, modele) {
   return {
-    id: Date.now().toString(),
+    id: generateId(),
     societe: societe || "BNETD",
     plaque: plaque.toUpperCase(),
     marque: "",
@@ -255,7 +244,7 @@ function loadFromStorage() {
         vehicles = parsed.map(v => ({ ...newVehicle('','',''), ...v, accessoires: v.accessoires||[], documents: v.documents||[], photos: v.photos||[], history: v.history||[] }));
         return true;
       }
-    } catch(e) {}
+    } catch(e) { console.warn('Erreur chargement', e); }
   }
   return false;
 }
@@ -266,21 +255,35 @@ function renderList() {
   const filterSociety = societyFilter.value;
   const filterStatus = statusFilter.value;
   let filtered = vehicles.filter(v => {
-    const matchText = v.plaque.toLowerCase().includes(filterText) || v.societe.toLowerCase().includes(filterText) || v.marque.toLowerCase().includes(filterText) || v.modele.toLowerCase().includes(filterText);
+    const matchText = v.plaque.toLowerCase().includes(filterText) || 
+                      v.societe.toLowerCase().includes(filterText) || 
+                      v.marque.toLowerCase().includes(filterText) || 
+                      v.modele.toLowerCase().includes(filterText);
     const matchSociety = filterSociety === 'all' || v.societe === filterSociety;
     const matchStatus = filterStatus === 'all' || v.statut === filterStatus;
     return matchText && matchSociety && matchStatus;
   });
-  if (!filtered.length) { listEl.innerHTML = '<div class="placeholder">Aucun véhicule enregistré. Importez ou ajoutez-en un.</div>'; return; }
+  if (!filtered.length) { 
+    listEl.innerHTML = '<div class="placeholder">Aucun véhicule enregistré. Importez ou ajoutez-en un.</div>'; 
+    return; 
+  }
   listEl.innerHTML = filtered.map(v => `
-    <div class="card ${selectedId===v.id?'selected':''}" data-id="${v.id}">
+    <div class="card ${selectedId === v.id ? 'selected' : ''}" data-id="${v.id}">
       <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.societe)}</h4>
       <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
       <span class="badge">${v.dateCreation?.split(' ')[0] || ''}</span>
       ${v.photos?.length ? `<span class="badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ''}
     </div>
   `).join('');
-  listEl.querySelectorAll('.card').forEach(el => el.addEventListener('click', () => selectVehicle(el.dataset.id)));
+  
+  // Attacher les événements de clic
+  listEl.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', function(e) {
+      const id = this.dataset.id;
+      console.log('Clic sur carte ID:', id);
+      selectVehicle(id);
+    });
+  });
   updateSocietyFilter();
 }
 
@@ -293,23 +296,26 @@ function updateSocietyFilter() {
 
 // ---------- SÉLECTION ----------
 function selectVehicle(id) {
-  // On réinitialise l'ID sélectionné
-  selectedId = id;
+  console.log('selectVehicle appelé avec ID:', id);
+  // Vérifier que le véhicule existe
   const v = vehicles.find(v => v.id === id);
   if (!v) {
-    // Si le véhicule n'existe plus (supprimé), on vide le détail
+    console.warn('Véhicule introuvable:', id);
     detailEl.style.display = 'none';
     placeholderEl.style.display = 'block';
+    selectedId = null;
     renderList();
     return;
   }
-  renderList();  // Met à jour la liste (highlight)
-  showDetail(v); // Affiche le détail du véhicule sélectionné
+  
+  selectedId = id;
+  renderList(); // Met à jour la liste (highlight)
+  showDetail(v);
 }
 
 // ---------- DÉTAIL ----------
 function showDetail(v) {
-  // On vide le contenu précédent
+  console.log('showDetail pour:', v.plaque, v.id);
   detailEl.style.display = 'block';
   placeholderEl.style.display = 'none';
   
@@ -361,20 +367,25 @@ function showDetail(v) {
     <div class="form-group"><div id="mapContainer" class="map-container"></div><button id="getPosBtn" class="btn btn-outline" style="margin-top:0.5rem;"><i class="fas fa-location-dot"></i> Ma position</button></div>
     <div class="action-buttons"><button id="deleteBtn" class="btn btn-red">Supprimer</button><button id="saveBtn" class="btn">Enregistrer</button></div>
   `;
-  setTimeout(() => initMap(v.position), 200);
+  
+  // Initialiser la carte après un court délai
+  setTimeout(() => initMap(v.position), 300);
+  
+  // Attacher les événements
   document.getElementById('saveBtn').addEventListener('click', () => saveVehicle(v.id));
   document.getElementById('deleteBtn').addEventListener('click', () => deleteVehicle(v.id));
   document.getElementById('getPosBtn').addEventListener('click', () => getCurrentPos(v.id));
   document.getElementById('photoUpload').addEventListener('change', (e) => handlePhotos(v.id, e.target.files));
 }
 
+// ---------- CARTE ----------
 function initMap(pos) {
-  if (map) map.remove();
+  if (map) { map.remove(); map = null; }
+  if (marker) { marker.remove(); marker = null; }
   const lat = pos?.lat || DEFAULT_POS.lat;
   const lng = pos?.lng || DEFAULT_POS.lng;
   map = L.map('mapContainer').setView([lat,lng], 12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'© OpenStreetMap' }).addTo(map);
-  if (marker) marker.remove();
   marker = L.marker([lat,lng], { draggable:true }).addTo(map);
   marker.on('dragend', () => {
     const p = marker.getLatLng();
@@ -423,83 +434,56 @@ function handlePhotos(id, files) {
   });
 }
 
-// ---------- SAUVEGARDE VÉHICULE (CORRIGÉE) ----------
+// ---------- SAUVEGARDE VÉHICULE ----------
 function saveVehicle(id) {
   const v = vehicles.find(v => v.id === id);
   if (!v) { alert('Véhicule introuvable'); return; }
   
-  // Récupération des valeurs depuis le DOM
-  const newStatus = document.getElementById('fStatus').value;
-  const newDateCreation = document.getElementById('fCreation').value?.replace('T',' ') || '';
-  const newDateLivraison = document.getElementById('fLivraison').value?.replace('T',' ') || '';
-  const newSociete = document.getElementById('fSociete').value;
-  const newPlaque = document.getElementById('fPlaque').value;
-  const newMarque = document.getElementById('fMarque').value;
-  const newModele = document.getElementById('fModele').value;
-  const newRefCommande = document.getElementById('fRefCommande').value;
-  const newTypeMaintenance = document.getElementById('fTypeMaintenance').value;
-  const newKm = document.getElementById('fKm').value;
-  const newChassis = document.getElementById('fChassis').value;
-  const newEnergie = document.getElementById('fEnergie').value;
-  const newNiveauCarburant = document.getElementById('fCarburant').value;
-  const newMiseEnService = document.getElementById('fMiseService').value;
-  const newCouleurExterne = document.getElementById('fCouleurExterne').value;
-  const newContactChauffeur = document.getElementById('fContactChauffeur').value;
-  const newObjetVisite = document.getElementById('fObjetVisite').value;
-  const newAutresObs = document.getElementById('fAutresObs').value;
-  const newPositionGeo = document.getElementById('fPositionGeo').value;
-  const newAccessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
-  const newDocuments = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
-
-  // Sauvegarde de l'ancien statut pour l'historique
   const oldStatus = v.statut;
+  
+  v.statut = document.getElementById('fStatus').value;
+  v.dateCreation = document.getElementById('fCreation').value?.replace('T',' ') || '';
+  v.dateLivraison = document.getElementById('fLivraison').value?.replace('T',' ') || '';
+  v.societe = document.getElementById('fSociete').value;
+  v.plaque = document.getElementById('fPlaque').value;
+  v.marque = document.getElementById('fMarque').value;
+  v.modele = document.getElementById('fModele').value;
+  v.referenceCommande = document.getElementById('fRefCommande').value;
+  v.typeMaintenance = document.getElementById('fTypeMaintenance').value;
+  v.kilometrage = document.getElementById('fKm').value;
+  v.chassis = document.getElementById('fChassis').value;
+  v.energie = document.getElementById('fEnergie').value;
+  v.niveauCarburant = document.getElementById('fCarburant').value;
+  v.miseEnService = document.getElementById('fMiseService').value;
+  v.couleurExterne = document.getElementById('fCouleurExterne').value;
+  v.contactChauffeur = document.getElementById('fContactChauffeur').value;
+  v.objetVisite = document.getElementById('fObjetVisite').value;
+  v.autresObservations = document.getElementById('fAutresObs').value;
+  v.positionGeo = document.getElementById('fPositionGeo').value;
+  v.accessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
+  v.documents = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
 
-  // Mise à jour de l'objet
-  v.statut = newStatus;
-  v.dateCreation = newDateCreation;
-  v.dateLivraison = newDateLivraison;
-  v.societe = newSociete;
-  v.plaque = newPlaque;
-  v.marque = newMarque;
-  v.modele = newModele;
-  v.referenceCommande = newRefCommande;
-  v.typeMaintenance = newTypeMaintenance;
-  v.kilometrage = newKm;
-  v.chassis = newChassis;
-  v.energie = newEnergie;
-  v.niveauCarburant = newNiveauCarburant;
-  v.miseEnService = newMiseEnService;
-  v.couleurExterne = newCouleurExterne;
-  v.contactChauffeur = newContactChauffeur;
-  v.objetVisite = newObjetVisite;
-  v.autresObservations = newAutresObs;
-  v.positionGeo = newPositionGeo;
-  v.accessoires = newAccessoires;
-  v.documents = newDocuments;
-
-  // Historique des changements de statut
   if (oldStatus !== v.statut) {
     if (!v.history) v.history = [];
     v.history.push({ date: today(), action: `Changement statut : ${oldStatus} → ${v.statut}`, status: v.statut });
   }
 
-  // Sauvegarde dans localStorage
   save();
-
   // Rafraîchir la liste
   renderList();
-
-  // Réafficher le détail du même véhicule (avec les nouvelles valeurs)
-  // On sélectionne à nouveau le même ID
-  selectVehicle(id);
-
+  // Réafficher le détail du même véhicule
+  showDetail(v);
   alert('✅ Enregistré !');
 }
 
 function deleteVehicle(id) {
   if (!confirm('Supprimer définitivement ce véhicule ?')) return;
   vehicles = vehicles.filter(v => v.id !== id);
-  if (selectedId === id) { selectedId = null; detailEl.style.display='none'; placeholderEl.style.display='block'; }
+  if (selectedId === id) { 
+    selectedId = null; 
+    detailEl.style.display='none'; 
+    placeholderEl.style.display='block'; 
+  }
   save();
   renderList();
 }
@@ -513,7 +497,7 @@ function addVehicle(plaque, societe, modele) {
   selectVehicle(v.id);
 }
 
-// ---------- EXPORT EXCEL (12 colonnes originales) ----------
+// ---------- EXPORT EXCEL ----------
 function exportExcel() {
   const data = vehicles.map((v, idx) => ({
     "NB": idx+1,
@@ -590,7 +574,7 @@ function restoreJSON() {
   input.click();
 }
 
-// ---------- IMPORT EXCEL AVEC COLONNES EXACTES ----------
+// ---------- IMPORT EXCEL ----------
 function importExcel(file) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -744,6 +728,9 @@ if (!loadFromStorage()) {
   save();
 }
 renderList();
+
+// Pour déboguer
+console.log('Véhicules chargés:', vehicles.length);
 </script>
 </body>
 </html>
