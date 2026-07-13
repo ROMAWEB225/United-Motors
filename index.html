@@ -54,12 +54,11 @@
     .pending-list ul { list-style:none; padding:0; }
     .pending-list li { padding:0.2rem 0; border-bottom:1px solid #eef2ff; }
     .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
-    .modal-content { background:white; border-radius:24px; padding:1.5rem; max-width:500px; width:90%; position:relative; max-height:90vh; overflow-y:auto; }
+    .modal-content { background:white; border-radius:24px; padding:1.5rem; max-width:550px; width:90%; position:relative; max-height:90vh; overflow-y:auto; }
     .close { position:absolute; right:1rem; top:0.5rem; font-size:1.8rem; cursor:pointer; }
     .placeholder { text-align:center; margin-top:3rem; color:#5b6e8c; }
     .action-buttons { display:flex; gap:0.8rem; justify-content:flex-end; margin-top:1rem; flex-wrap:wrap; }
     @media(max-width:700px){ .dashboard{flex-direction:column;} .panel-list,.panel-detail{height:auto;max-height:50vh;} }
-    /* styles PDF */
     .pdf-header { text-align:center; margin-bottom:10px; }
     .pdf-header h2 { color:#1e3c72; }
     .pdf-table { width:100%; border-collapse:collapse; font-size:8pt; font-family:'Segoe UI', Arial, sans-serif; }
@@ -119,7 +118,7 @@
 
 <div id="importModal" class="modal">
   <div class="modal-content"><span class="close">&times;</span><h2>Importer un fichier Excel</h2>
-    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules. Les colonnes reconnues sont : <strong>immatriculation, société, marque, modèle, date création, date livraison, pannes, diagnostic, pièces, statut, position</strong>.</p>
+    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules. Toutes les colonnes reconnues seront importées automatiquement.</p>
     <input type="file" id="fileInput" accept=".xlsx,.xls"><br><br>
     <button id="importConfirmBtn" class="btn">Importer</button>
   </div>
@@ -128,8 +127,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  APPLICATION SAV FLEET MANAGER - VERSION FINALE           *
- *  Tous droits réservés - NTR                               *
+ *  SAV FLEET MANAGER - VERSION FINALE AVEC IMPORT COMPLET   *
  ************************************************************/
 
 // ---------- DONNÉES EXEMPLES BNETD (47) ----------
@@ -220,6 +218,29 @@ function getCoordFromPosGeo(pos) {
 }
 
 function today() { return new Date().toISOString().slice(0,19).replace('T',' '); }
+
+function parseDate(val) {
+  if (!val) return '';
+  // si c'est un nombre Excel (ex: 45000)
+  if (typeof val === 'number' && val > 1000) {
+    const d = new Date((val - 25569) * 86400 * 1000);
+    return d.toISOString().slice(0,19).replace('T',' ');
+  }
+  const str = String(val).trim();
+  // format YYYY-MM-DD ou YYYY-MM-DD HH:mm:ss
+  if (str.match(/^\d{4}-\d{2}-\d{2}/)) return str;
+  // format DD/MM/YYYY
+  if (str.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+    const parts = str.split(/[\/\s]/);
+    if (parts.length >= 3) return `${parts[2]}-${parts[1]}-${parts[0]} 00:00:00`;
+  }
+  return str;
+}
+
+function splitList(str) {
+  if (!str) return [];
+  return String(str).split(',').map(s => s.trim()).filter(Boolean);
+}
 
 function newVehicle(plaque, societe, modele) {
   return {
@@ -597,7 +618,7 @@ function restoreJSON() {
   input.click();
 }
 
-// ---------- IMPORT EXCEL ----------
+// ---------- IMPORT EXCEL COMPLET ----------
 function importExcel(file) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -608,43 +629,73 @@ function importExcel(file) {
       const json = XLSX.utils.sheet_to_json(sheet);
       if (!json.length) { alert('Fichier vide'); return; }
       let imported = 0;
+
+      // Fonction pour récupérer une valeur en ignorant la casse et les accents
+      const get = (row, keys) => {
+        for (let k of keys) {
+          // Recherche exacte
+          if (row[k] !== undefined) return row[k];
+          // Recherche insensible à la casse
+          const found = Object.keys(row).find(col => col.toLowerCase().trim() === k.toLowerCase().trim());
+          if (found) return row[found];
+        }
+        return '';
+      };
+
       json.forEach(row => {
-        // On essaie de mapper les colonnes (en ignorant la casse et les accents)
-        const get = (keys) => {
-          for (let k of keys) {
-            if (row[k] !== undefined) return row[k];
-            const found = Object.keys(row).find(col => col.toLowerCase().trim() === k.toLowerCase().trim());
-            if (found) return row[found];
-          }
-          return '';
-        };
-        const plaque = get(['immatriculation', 'immat', 'plaque', 'matricule'])?.toString().trim() || '';
-        const societe = get(['societe', 'client', 'entreprise', 'société'])?.toString().trim() || 'BNETD';
-        const marque = get(['marque'])?.toString().trim() || '';
-        const modele = get(['modele', 'modèle'])?.toString().trim() || '';
+        const plaque = get(row, ['immatriculation', 'immat', 'plaque', 'matricule'])?.toString().trim() || '';
         if (!plaque) return;
-        const v = newVehicle(plaque, societe, modele);
-        v.marque = marque;
-        v.modele = modele;
-        v.dateCreation = get(['date creation', 'datecréation', 'date_de_creation'])?.toString().trim() || today();
-        v.dateLivraison = get(['date livraison', 'datelivraison'])?.toString().trim() || '';
-        v.travauxClient = get(['pannes', 'pannes signalées', 'pannes_signalees'])?.toString().trim() || '';
-        v.rapportDiagnostic = get(['rapport', 'diagnostic', 'rapport diagnostic'])?.toString().trim() || '';
-        v.pieces = get(['pieces', 'pièces', 'pieces_a_remplacer'])?.toString().trim() || '';
-        v.statut = get(['statut'])?.toString().trim() || 'Réceptionné';
-        v.positionGeo = get(['position', 'position geo', 'position_geo'])?.toString().trim() || '';
+
+        const v = newVehicle(plaque, 'BNETD', '');
+        v.societe = get(row, ['societe', 'client', 'entreprise', 'société'])?.toString().trim() || 'BNETD';
+        v.marque = get(row, ['marque'])?.toString().trim() || '';
+        v.modele = get(row, ['modele', 'modèle'])?.toString().trim() || '';
+        v.dateCreation = parseDate(get(row, ['date creation', 'datecréation', 'date_de_creation'])) || today();
+        v.dateLivraison = parseDate(get(row, ['date livraison', 'datelivraison'])) || '';
+        v.travauxClient = get(row, ['pannes', 'pannes signalées', 'pannes_signalees'])?.toString().trim() || '';
+        v.rapportDiagnostic = get(row, ['rapport', 'diagnostic', 'rapport diagnostic'])?.toString().trim() || '';
+        v.pieces = get(row, ['pieces', 'pièces', 'pieces_a_remplacer'])?.toString().trim() || '';
+        v.statut = get(row, ['statut'])?.toString().trim() || 'Réceptionné';
+        v.positionGeo = get(row, ['position', 'position geo', 'position_geo'])?.toString().trim() || '';
         const pos = getCoordFromPosGeo(v.positionGeo);
         v.position = pos;
         v.adresseTexte = pos.adresse || "Abidjan";
+
+        // --- CHAMPS SUPPLÉMENTAIRES ---
+        v.kilometrage = get(row, ['kilometrage', 'km'])?.toString().trim() || '';
+        v.chassis = get(row, ['chassis', 'n° chassis', 'numéro chassis'])?.toString().trim() || '';
+        v.energie = get(row, ['energie', 'énergie'])?.toString().trim() || 'Diesel';
+        v.niveauCarburant = get(row, ['niveau carburant', 'niveau_carburant'])?.toString().trim() || '1/2';
+        v.miseEnService = parseDate(get(row, ['mise en service', 'mise_en_service'])) || '';
+        v.proprietaireNom = get(row, ['proprietaire nom', 'proprietaire_nom', 'proprietaire'])?.toString().trim() || '';
+        v.proprietaireContact = get(row, ['proprietaire contact', 'proprietaire_contact', 'contact proprietaire'])?.toString().trim() || '';
+        v.chauffeurNom = get(row, ['chauffeur nom', 'chauffeur_nom', 'chauffeur'])?.toString().trim() || '';
+        v.chauffeurContact = get(row, ['chauffeur contact', 'chauffeur_contact', 'contact chauffeur'])?.toString().trim() || '';
+        v.transmission = get(row, ['transmission'])?.toString().trim() || 'Manuelle';
+        v.couleur = get(row, ['couleur'])?.toString().trim() || '';
+        v.puissance = get(row, ['puissance'])?.toString().trim() || '';
+        v.finAssurance = parseDate(get(row, ['fin assurance', 'fin_assurance'])) || '';
+        v.finVignette = parseDate(get(row, ['fin vignette', 'fin_vignette'])) || '';
+        v.numeroIntervention = get(row, ['numero intervention', 'numero_intervention', 'n° intervention'])?.toString().trim() || '';
+
+        // Accessoires : colonne "accessoires" avec valeurs séparées par des virgules
+        const accStr = get(row, ['accessoires', 'accessoires'])?.toString().trim() || '';
+        v.accessoires = splitList(accStr);
+
+        // Documents : colonne "documents" avec valeurs séparées par des virgules
+        const docStr = get(row, ['documents', 'documents'])?.toString().trim() || '';
+        v.documents = splitList(docStr);
+
         vehicles.push(v);
         imported++;
       });
+
       if (imported) {
         save();
         renderList();
-        alert(`${imported} véhicules importés avec succès.`);
+        alert(`${imported} véhicules importés avec succès (tous les champs remplis).`);
       } else {
-        alert('Aucun véhicule n\'a été importé. Vérifiez les colonnes (immatriculation, société, marque, modèle...).');
+        alert('Aucun véhicule n\'a été importé. Vérifiez la colonne "immatriculation".');
       }
     } catch(err) {
       alert('Erreur lors de la lecture du fichier : ' + err.message);
