@@ -118,7 +118,18 @@
 
 <div id="importModal" class="modal">
   <div class="modal-content"><span class="close">&times;</span><h2>Importer un fichier Excel</h2>
-    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules. Toutes les colonnes reconnues seront importées automatiquement.</p>
+    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules. Les colonnes doivent correspondre aux noms exacts ci-dessous :</p>
+    <ul style="font-size:0.9rem; margin:0.5rem 0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0.2rem 1rem;">
+      <li><strong>Client</strong></li><li><strong>Date de création</strong></li>
+      <li><strong>Date de Livraison</strong></li><li><strong>Immatriculation</strong></li>
+      <li><strong>Marque</strong></li><li><strong>Modele</strong></li>
+      <li><strong>Référence de commande</strong></li><li><strong>Type de Maintenance</strong></li>
+      <li><strong>Kilométrage</strong></li><li><strong>N° Châssis</strong></li>
+      <li><strong>Energie</strong></li><li><strong>Niveau de carburant</strong></li>
+      <li><strong>Mise en Service</strong></li><li><strong>Couleur(Externe)</strong></li>
+      <li><strong>Contact Chauffeur Déposant</strong></li><li><strong>Objet de la visite</strong></li>
+      <li><strong>Autres observations</strong></li>
+    </ul>
     <input type="file" id="fileInput" accept=".xlsx,.xls"><br><br>
     <button id="importConfirmBtn" class="btn">Importer</button>
   </div>
@@ -127,8 +138,59 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - IMPORT COMPLET (sans données par défaut)
+ *  SAV FLEET MANAGER - IMPORT EXCEL AVEC COLONNES EXACTES   *
  ************************************************************/
+
+// ---------- DONNÉES EXEMPLES BNETD (47) ----------
+const BNETD_DATA = [
+  { nb:1, dateCreation:"2026-05-06 09:08:52", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:2, dateCreation:"2026-05-05 10:24:40", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:3, dateCreation:"2026-04-28 16:58:50", immat:"3235KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:4, dateCreation:"2026-04-28 14:50:06", immat:"41LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport:"BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:5, dateCreation:"2026-04-28 14:40:37", immat:"AA969LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:6, dateCreation:"2026-04-25 12:32:17", immat:"AA829VZ", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:7, dateCreation:"2026-04-25 12:27:33", immat:"AA677EY", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:8, dateCreation:"2026-04-25 12:22:43", immat:"855LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:9, dateCreation:"2026-04-25 12:19:04", immat:"2458KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:10, dateCreation:"2026-04-25 10:46:39", immat:"38LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:11, dateCreation:"2026-04-25 09:17:09", immat:"2502KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:12, dateCreation:"2026-04-24 08:40:03", immat:"AA601AF", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT AEROPORT" },
+  { nb:13, dateCreation:"2026-04-23 13:43:35", immat:"5897HF01", marque:"TOYOTA", modele:"HILUX", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:14, dateCreation:"2026-04-23 13:21:34", immat:"6763JE01", marque:"MITSUBISHI", modele:"L200", pannes:"FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport:"MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces:"MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", positionGeo:"DEPOT 2" },
+  { nb:15, dateCreation:"2026-04-23 13:12:31", immat:"58LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT 2" },
+  { nb:16, dateCreation:"2026-04-21 17:14:21", immat:"64LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:17, dateCreation:"2026-04-21 14:36:31", immat:"221LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:18, dateCreation:"2026-04-20 14:39:31", immat:"2296KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:19, dateCreation:"2026-04-16 15:53:20", immat:"AA153PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:20, dateCreation:"2026-04-16 12:36:47", immat:"2309KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:21, dateCreation:"2026-04-07 15:08:33", immat:"AA248SX", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:22, dateCreation:"2026-04-07 12:40:54", immat:"7887JT01", marque:"BMW", modele:"520I", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:23, dateCreation:"2026-04-02 16:52:19", immat:"AA223LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:24, dateCreation:"2026-04-02 16:46:01", immat:"AA285AL", marque:"FORD", modele:"Territory", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:25, dateCreation:"2026-04-01 16:57:21", immat:"2303KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:26, dateCreation:"2026-04-01 16:53:25", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:27, dateCreation:"2026-04-01 11:47:26", immat:"2910KB01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:28, dateCreation:"2026-04-01 09:11:21", immat:"94LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:29, dateCreation:"2026-03-31 12:49:13", immat:"AA175PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:30, dateCreation:"2026-03-30 08:51:15", immat:"1922LZ01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:31, dateCreation:"2026-03-27 16:28:36", immat:"AA986PF", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:32, dateCreation:"2026-03-27 16:22:04", immat:"AA678BX", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:33, dateCreation:"2026-03-27 12:31:21", immat:"260LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT AEROPORT" },
+  { nb:34, dateCreation:"2026-03-26 16:40:27", immat:"2462KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:35, dateCreation:"2026-03-26 15:44:57", immat:"2503KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport:"SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:36, dateCreation:"2026-03-25 17:12:37", immat:"862LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - FUMEE NOIRE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT 2" },
+  { nb:37, dateCreation:"2026-03-25 17:09:33", immat:"75LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"DIAGNOSTIC", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:38, dateCreation:"2026-03-25 15:08:06", immat:"56LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces:"MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:39, dateCreation:"2026-03-25 09:19:26", immat:"AA445CA", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:40, dateCreation:"2026-03-25 09:15:34", immat:"AA150CB", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:41, dateCreation:"2026-03-25 09:09:19", immat:"212JJ01", marque:"RENAULT", modele:"LOGAN", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:42, dateCreation:"2026-03-25 09:04:39", immat:"1207JP01", marque:"RENAULT", modele:"DUSTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:43, dateCreation:"2026-05-12 09:04:39", immat:"AA933VZ", marque:"DONGFENG", modele:"RICH6 ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"UNITED MOTORS" },
+  { nb:44, dateCreation:"2026-05-13 00:00:00", immat:"63LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"" },
+  { nb:45, dateCreation:"2026-05-19 00:00:00", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR", pieces:"MOTEUR + TURBO", positionGeo:"GARAGE 2" },
+  { nb:46, dateCreation:"2026-05-20 00:00:00", immat:"2667KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR - VISTE TECHNIQUE", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:47, dateCreation:"2026-06-01 00:00:00", immat:"AA609VE", marque:"MITSUBISHI", modele:"L200", pannes:"PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport:"", pieces:"", positionGeo:"GARAGE 2" }
+];
 
 // ---------- CONFIG ----------
 const DEFAULT_POS = { lat:5.3364, lng:-4.0267 };
@@ -198,17 +260,24 @@ function newVehicle(plaque, societe, modele) {
     statut: "Réceptionné",
     dateCreation: today(),
     dateLivraison: "",
+    // Nouveaux champs pour l'import
+    referenceCommande: "",
+    typeMaintenance: "",
     kilometrage: "",
     chassis: "",
     energie: "Diesel",
     niveauCarburant: "1/2",
     miseEnService: "",
+    couleurExterne: "",
+    contactChauffeur: "",
+    objetVisite: "",
+    autresObservations: "",
+    // Anciens champs conservés
     proprietaireNom: "",
     proprietaireContact: "",
     chauffeurNom: "",
     chauffeurContact: "",
     transmission: "Manuelle",
-    couleur: "",
     puissance: "",
     finAssurance: "",
     finVignette: "",
@@ -241,6 +310,26 @@ function loadFromStorage() {
     } catch(e) {}
   }
   return false;
+}
+
+function initDefaultData() {
+  vehicles = BNETD_DATA.map((row, idx) => {
+    const pos = getCoordFromPosGeo(row.positionGeo);
+    const v = newVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`);
+    v.id = `bnetd_${idx}`;
+    v.dateCreation = row.dateCreation;
+    v.marque = row.marque;
+    v.modele = row.modele;
+    v.travauxClient = row.pannes;
+    v.rapportDiagnostic = row.rapport;
+    v.pieces = row.pieces;
+    v.positionGeo = row.positionGeo;
+    v.position = pos;
+    v.adresseTexte = pos.adresse || "Abidjan";
+    v.history = [{ date: today(), action: "Import BNETD", status: "Réceptionné" }];
+    return v;
+  });
+  save();
 }
 
 // ---------- RENDU LISTE ----------
@@ -304,41 +393,30 @@ function showDetail(v) {
       <div class="form-group"><label>Date livraison</label><input type="datetime-local" id="fLivraison" value="${v.dateLivraison?.replace(' ','T')||''}"></div>
     </div>
     <div class="row">
-      <div class="form-group"><label>Société</label><input type="text" id="fSociete" value="${escapeHtml(v.societe)}"></div>
+      <div class="form-group"><label>Client / Société</label><input type="text" id="fSociete" value="${escapeHtml(v.societe)}"></div>
       <div class="form-group"><label>Immatriculation</label><input type="text" id="fPlaque" value="${escapeHtml(v.plaque)}"></div>
       <div class="form-group"><label>Marque</label><input type="text" id="fMarque" value="${escapeHtml(v.marque)}"></div>
     </div>
     <div class="row">
       <div class="form-group"><label>Modèle</label><input type="text" id="fModele" value="${escapeHtml(v.modele)}"></div>
+      <div class="form-group"><label>Référence commande</label><input type="text" id="fRefCommande" value="${escapeHtml(v.referenceCommande||'')}"></div>
+      <div class="form-group"><label>Type Maintenance</label><input type="text" id="fTypeMaintenance" value="${escapeHtml(v.typeMaintenance||'')}"></div>
+    </div>
+    <div class="row">
       <div class="form-group"><label>Kilométrage</label><input type="number" id="fKm" value="${v.kilometrage||''}"></div>
       <div class="form-group"><label>N° Châssis</label><input type="text" id="fChassis" value="${escapeHtml(v.chassis||'')}"></div>
+      <div class="form-group"><label>Énergie</label><select id="fEnergie"><option ${v.energie==='Essence'?'selected':''}>Essence</option><option ${v.energie==='Diesel'?'selected':''}>Diesel</option><option ${v.energie==='Électrique'?'selected':''}>Électrique</option><option ${v.energie==='Hybride'?'selected':''}>Hybride</option></select></div>
     </div>
     <div class="row">
-      <div class="form-group"><label>Énergie</label><select id="fEnergie"><option ${v.energie==='Essence'?'selected':''}>Essence</option><option ${v.energie==='Diesel'?'selected':''}>Diesel</option><option ${v.energie==='Électrique'?'selected':''}>Électrique</option><option ${v.energie==='Hybride'?'selected':''}>Hybride</option></select></div>
       <div class="form-group"><label>Niveau carburant</label><select id="fCarburant"><option ${v.niveauCarburant==='Vide'?'selected':''}>Vide</option><option ${v.niveauCarburant==='1/4'?'selected':''}>1/4</option><option ${v.niveauCarburant==='1/2'?'selected':''}>1/2</option><option ${v.niveauCarburant==='3/4'?'selected':''}>3/4</option><option ${v.niveauCarburant==='Plein'?'selected':''}>Plein</option></select></div>
       <div class="form-group"><label>Mise en service</label><input type="date" id="fMiseService" value="${v.miseEnService||''}"></div>
+      <div class="form-group"><label>Couleur (Externe)</label><input type="text" id="fCouleurExterne" value="${escapeHtml(v.couleurExterne||'')}"></div>
     </div>
     <div class="row">
-      <div class="form-group"><label>Transmission</label><select id="fTransmission"><option ${v.transmission==='Manuelle'?'selected':''}>Manuelle</option><option ${v.transmission==='Automatique'?'selected':''}>Automatique</option></select></div>
-      <div class="form-group"><label>Couleur</label><input type="text" id="fCouleur" value="${escapeHtml(v.couleur||'')}"></div>
-      <div class="form-group"><label>Puissance (ch)</label><input type="text" id="fPuissance" value="${escapeHtml(v.puissance||'')}"></div>
+      <div class="form-group"><label>Contact Chauffeur Déposant</label><input type="text" id="fContactChauffeur" value="${escapeHtml(v.contactChauffeur||'')}"></div>
+      <div class="form-group"><label>Objet de la visite</label><input type="text" id="fObjetVisite" value="${escapeHtml(v.objetVisite||'')}"></div>
     </div>
-    <div class="row">
-      <div class="form-group"><label>Propriétaire</label><input type="text" id="fPropNom" value="${escapeHtml(v.proprietaireNom||'')}"></div>
-      <div class="form-group"><label>Contact prop.</label><input type="tel" id="fPropContact" value="${escapeHtml(v.proprietaireContact||'')}"></div>
-    </div>
-    <div class="row">
-      <div class="form-group"><label>Chauffeur déposant</label><input type="text" id="fChauffeurNom" value="${escapeHtml(v.chauffeurNom||'')}"></div>
-      <div class="form-group"><label>Contact chauffeur</label><input type="tel" id="fChauffeurContact" value="${escapeHtml(v.chauffeurContact||'')}"></div>
-    </div>
-    <div class="row">
-      <div class="form-group"><label>Fin assurance</label><input type="date" id="fFinAssurance" value="${v.finAssurance||''}"></div>
-      <div class="form-group"><label>Fin vignette</label><input type="date" id="fFinVignette" value="${v.finVignette||''}"></div>
-    </div>
-    <div class="form-group"><label>Numéro d'intervention</label><input type="text" id="fNumInterv" value="${escapeHtml(v.numeroIntervention||'')}"></div>
-    <div class="form-group"><label>Pannes signalées (client)</label><textarea id="fPannes" rows="2">${escapeHtml(v.travauxClient||'')}</textarea></div>
-    <div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="fRapport" rows="2">${escapeHtml(v.rapportDiagnostic||'')}</textarea></div>
-    <div class="form-group"><label>Pièces à remplacer</label><textarea id="fPieces" rows="2">${escapeHtml(v.pieces||'')}</textarea></div>
+    <div class="form-group"><label>Autres observations</label><textarea id="fAutresObs" rows="2">${escapeHtml(v.autresObservations||'')}</textarea></div>
     <div class="form-group"><label>Accessoires</label>${accHtml}</div>
     <div class="form-group"><label>Documents</label>${docHtml}</div>
     <div class="form-group"><label>Position (texte)</label><input type="text" id="fPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>
@@ -420,24 +498,17 @@ function saveVehicle(id) {
   v.plaque = document.getElementById('fPlaque').value;
   v.marque = document.getElementById('fMarque').value;
   v.modele = document.getElementById('fModele').value;
+  v.referenceCommande = document.getElementById('fRefCommande').value;
+  v.typeMaintenance = document.getElementById('fTypeMaintenance').value;
   v.kilometrage = document.getElementById('fKm').value;
   v.chassis = document.getElementById('fChassis').value;
   v.energie = document.getElementById('fEnergie').value;
   v.niveauCarburant = document.getElementById('fCarburant').value;
   v.miseEnService = document.getElementById('fMiseService').value;
-  v.transmission = document.getElementById('fTransmission').value;
-  v.couleur = document.getElementById('fCouleur').value;
-  v.puissance = document.getElementById('fPuissance').value;
-  v.proprietaireNom = document.getElementById('fPropNom').value;
-  v.proprietaireContact = document.getElementById('fPropContact').value;
-  v.chauffeurNom = document.getElementById('fChauffeurNom').value;
-  v.chauffeurContact = document.getElementById('fChauffeurContact').value;
-  v.finAssurance = document.getElementById('fFinAssurance').value;
-  v.finVignette = document.getElementById('fFinVignette').value;
-  v.numeroIntervention = document.getElementById('fNumInterv').value;
-  v.travauxClient = document.getElementById('fPannes').value;
-  v.rapportDiagnostic = document.getElementById('fRapport').value;
-  v.pieces = document.getElementById('fPieces').value;
+  v.couleurExterne = document.getElementById('fCouleurExterne').value;
+  v.contactChauffeur = document.getElementById('fContactChauffeur').value;
+  v.objetVisite = document.getElementById('fObjetVisite').value;
+  v.autresObservations = document.getElementById('fAutresObs').value;
   v.positionGeo = document.getElementById('fPositionGeo').value;
   v.accessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
   v.documents = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
@@ -467,7 +538,7 @@ function addVehicle(plaque, societe, modele) {
   selectVehicle(v.id);
 }
 
-// ---------- EXPORT EXCEL (12 colonnes) ----------
+// ---------- EXPORT EXCEL (12 colonnes originales) ----------
 function exportExcel() {
   const data = vehicles.map((v, idx) => ({
     "NB": idx+1,
@@ -489,7 +560,7 @@ function exportExcel() {
   XLSX.writeFile(wb, `fleet_export_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ---------- EXPORT PDF (12 colonnes) ----------
+// ---------- EXPORT PDF ----------
 function exportPdf() {
   const el = document.createElement('div');
   el.style.padding = '15px';
@@ -544,7 +615,7 @@ function restoreJSON() {
   input.click();
 }
 
-// ---------- IMPORT EXCEL COMPLET ----------
+// ---------- IMPORT EXCEL AVEC COLONNES EXACTES ----------
 function importExcel(file) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -556,61 +627,69 @@ function importExcel(file) {
       if (!json.length) { alert('Fichier vide'); return; }
       let imported = 0;
 
-      // Fonction pour récupérer une valeur en ignorant la casse et les accents
-      const get = (row, keys) => {
-        for (let k of keys) {
-          // Recherche exacte
-          if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
-          // Recherche insensible à la casse
-          const found = Object.keys(row).find(col => col.toLowerCase().trim() === k.toLowerCase().trim());
-          if (found && row[found] !== undefined && row[found] !== null && row[found] !== '') return row[found];
-        }
-        return '';
+      // Mapping exact des noms de colonnes
+      const map = {
+        societe: 'Client',
+        dateCreation: 'Date de création',
+        dateLivraison: 'Date de Livraison',
+        plaque: 'Immatriculation',
+        marque: 'Marque',
+        modele: 'Modele',
+        referenceCommande: 'Référence de commande',
+        typeMaintenance: 'Type de Maintenance',
+        kilometrage: 'Kilométrage',
+        chassis: 'N° Châssis',
+        energie: 'Energie',
+        niveauCarburant: 'Niveau de carburant',
+        miseEnService: 'Mise en Service',
+        couleurExterne: 'Couleur(Externe)',
+        contactChauffeur: 'Contact Chauffeur Déposant',
+        objetVisite: 'Objet de la visite',
+        autresObservations: 'Autres observations'
       };
 
       json.forEach(row => {
-        const plaque = get(row, ['immatriculation', 'immat', 'plaque', 'matricule'])?.toString().trim() || '';
+        // Récupérer la valeur en ignorant la casse et les espaces
+        const get = (key) => {
+          const colName = map[key];
+          if (!colName) return '';
+          // Recherche exacte
+          if (row[colName] !== undefined) return row[colName];
+          // Recherche insensible à la casse
+          const found = Object.keys(row).find(k => k.toLowerCase().trim() === colName.toLowerCase().trim());
+          return found ? row[found] : '';
+        };
+
+        const plaque = get('plaque')?.toString().trim() || '';
         if (!plaque) return;
 
         const v = newVehicle(plaque, 'BNETD', '');
-        v.societe = get(row, ['societe', 'client', 'entreprise', 'société'])?.toString().trim() || 'BNETD';
-        v.marque = get(row, ['marque'])?.toString().trim() || '';
-        v.modele = get(row, ['modele', 'modèle'])?.toString().trim() || '';
-        v.dateCreation = parseDate(get(row, ['date creation', 'datecréation', 'date_de_creation'])) || today();
-        v.dateLivraison = parseDate(get(row, ['date livraison', 'datelivraison'])) || '';
-        v.travauxClient = get(row, ['pannes', 'pannes signalées', 'pannes_signalees'])?.toString().trim() || '';
-        v.rapportDiagnostic = get(row, ['rapport', 'diagnostic', 'rapport diagnostic'])?.toString().trim() || '';
-        v.pieces = get(row, ['pieces', 'pièces', 'pieces_a_remplacer'])?.toString().trim() || '';
-        v.statut = get(row, ['statut'])?.toString().trim() || 'Réceptionné';
-        v.positionGeo = get(row, ['position', 'position geo', 'position_geo'])?.toString().trim() || '';
+        v.societe = get('societe')?.toString().trim() || 'BNETD';
+        v.marque = get('marque')?.toString().trim() || '';
+        v.modele = get('modele')?.toString().trim() || '';
+        v.dateCreation = parseDate(get('dateCreation')) || today();
+        v.dateLivraison = parseDate(get('dateLivraison')) || '';
+        v.referenceCommande = get('referenceCommande')?.toString().trim() || '';
+        v.typeMaintenance = get('typeMaintenance')?.toString().trim() || '';
+        v.kilometrage = get('kilometrage')?.toString().trim() || '';
+        v.chassis = get('chassis')?.toString().trim() || '';
+        v.energie = get('energie')?.toString().trim() || 'Diesel';
+        v.niveauCarburant = get('niveauCarburant')?.toString().trim() || '1/2';
+        v.miseEnService = parseDate(get('miseEnService')) || '';
+        v.couleurExterne = get('couleurExterne')?.toString().trim() || '';
+        v.contactChauffeur = get('contactChauffeur')?.toString().trim() || '';
+        v.objetVisite = get('objetVisite')?.toString().trim() || '';
+        v.autresObservations = get('autresObservations')?.toString().trim() || '';
+
+        // On peut aussi remplir les champs "travauxClient", "rapportDiagnostic", "pieces" à partir de "Objet de la visite" par exemple
+        v.travauxClient = v.objetVisite; // ou laisser vide selon préférence
+
+        // Position GEO si présente (on peut ajouter une colonne "Position" si besoin, sinon on ignore)
+        v.positionGeo = ''; // pas de colonne prévue
+
         const pos = getCoordFromPosGeo(v.positionGeo);
         v.position = pos;
         v.adresseTexte = pos.adresse || "Abidjan";
-
-        // --- CHAMPS SUPPLÉMENTAIRES ---
-        v.kilometrage = get(row, ['kilometrage', 'km'])?.toString().trim() || '';
-        v.chassis = get(row, ['chassis', 'n° chassis', 'numéro chassis'])?.toString().trim() || '';
-        v.energie = get(row, ['energie', 'énergie'])?.toString().trim() || 'Diesel';
-        v.niveauCarburant = get(row, ['niveau carburant', 'niveau_carburant'])?.toString().trim() || '1/2';
-        v.miseEnService = parseDate(get(row, ['mise en service', 'mise_en_service'])) || '';
-        v.proprietaireNom = get(row, ['proprietaire nom', 'proprietaire_nom', 'proprietaire'])?.toString().trim() || '';
-        v.proprietaireContact = get(row, ['proprietaire contact', 'proprietaire_contact', 'contact proprietaire'])?.toString().trim() || '';
-        v.chauffeurNom = get(row, ['chauffeur nom', 'chauffeur_nom', 'chauffeur'])?.toString().trim() || '';
-        v.chauffeurContact = get(row, ['chauffeur contact', 'chauffeur_contact', 'contact chauffeur'])?.toString().trim() || '';
-        v.transmission = get(row, ['transmission'])?.toString().trim() || 'Manuelle';
-        v.couleur = get(row, ['couleur'])?.toString().trim() || '';
-        v.puissance = get(row, ['puissance'])?.toString().trim() || '';
-        v.finAssurance = parseDate(get(row, ['fin assurance', 'fin_assurance'])) || '';
-        v.finVignette = parseDate(get(row, ['fin vignette', 'fin_vignette'])) || '';
-        v.numeroIntervention = get(row, ['numero intervention', 'numero_intervention', 'n° intervention'])?.toString().trim() || '';
-
-        // Accessoires : colonne "accessoires" avec valeurs séparées par des virgules
-        const accStr = get(row, ['accessoires'])?.toString().trim() || '';
-        v.accessoires = splitList(accStr);
-
-        // Documents : colonne "documents" avec valeurs séparées par des virgules
-        const docStr = get(row, ['documents'])?.toString().trim() || '';
-        v.documents = splitList(docStr);
 
         vehicles.push(v);
         imported++;
@@ -619,12 +698,12 @@ function importExcel(file) {
       if (imported) {
         save();
         renderList();
-        alert(`${imported} véhicules importés avec succès (tous les champs remplis).`);
+        alert(`${imported} véhicules importés avec succès.`);
       } else {
-        alert('Aucun véhicule n\'a été importé. Vérifiez la colonne "immatriculation".');
+        alert('Aucun véhicule importé. Vérifiez la colonne "Immatriculation".');
       }
     } catch(err) {
-      alert('Erreur lors de la lecture du fichier : ' + err.message);
+      alert('Erreur lors de la lecture : ' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
@@ -702,13 +781,8 @@ societyFilter.addEventListener('change', renderList);
 statusFilter.addEventListener('change', renderList);
 
 // ---------- DÉMARRAGE ----------
-// On démarre avec une liste vide si aucune sauvegarde n'existe
-if (!loadFromStorage()) {
-  // Pas de données initiales, on laisse la liste vide
-  vehicles = [];
-  save();
-  renderList();
-}
+if (!loadFromStorage()) initDefaultData();
+renderList();
 </script>
 </body>
 </html>
