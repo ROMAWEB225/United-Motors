@@ -1,1109 +1,897 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="manifest" href="manifest.json" />
-    <title>BNETD TRACKER | Gestion de parc</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NTR-APP - Gestion SAV Multi-Sociétés</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    /* TOUS LES STYLES (identiques à avant, avec quelques ajouts pour la config) */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7fc; color: #1e2a3e; }
+    header { background: #1e3c72; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    header h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .btn-primary { background: #ff9800; border: none; padding: 0.5rem 1rem; border-radius: 30px; color: #1e2a3e; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-primary:hover { background: #fb8c00; }
+    .btn-secondary { background: #e2e8f0; border: none; padding: 0.4rem 0.8rem; border-radius: 20px; cursor: pointer; }
+    .btn-danger { background: #c0392b; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 20px; cursor: pointer; }
+    .tabs { display: flex; gap: 0.5rem; background: white; padding: 0.5rem 1.5rem 0 1.5rem; border-bottom: 2px solid #e2e8f0; }
+    .tab-btn { background: none; border: none; padding: 0.8rem 1.5rem; font-weight: bold; cursor: pointer; color: #5b6e8c; }
+    .tab-btn.active { color: #ff9800; border-bottom: 3px solid #ff9800; }
+    .dashboard { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1.5rem; }
+    .vehicle-list-panel { flex: 1.2; min-width: 260px; background: white; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1rem; height: calc(100vh - 100px); overflow-y: auto; }
+    .vehicle-detail-panel { flex: 3; min-width: 320px; background: white; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 1.5rem; height: calc(100vh - 100px); overflow-y: auto; }
+    .search-filter { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+    .search-filter input, .search-filter select { flex: 1; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 20px; min-width: 120px; }
+    .vehicles-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .vehicle-card { background: #f8fafc; border-left: 5px solid #ff9800; padding: 0.8rem; border-radius: 16px; cursor: pointer; }
+    .vehicle-card.selected { background: #eef2ff; border-left-color: #1e3c72; }
+    .vehicle-card h4 { margin-bottom: 0.2rem; }
+    .vehicle-card p { font-size: 0.8rem; color: #334155; }
+    .status-badge { display: inline-block; background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem; margin-top: 0.3rem; }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { font-weight: 600; display: block; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 12px; font-family: inherit; }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .form-row .form-group { flex: 1; margin-bottom: 0; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.5rem; }
+    .checkbox-group label { display: flex; align-items: center; gap: 0.3rem; font-weight: normal; }
+    .map-container { height: 250px; border-radius: 16px; margin: 1rem 0; background: #eef2ff; }
+    .photo-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .photo-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+    .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: white; border-radius: 20px; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
+    .stat-number { font-size: 2.2rem; font-weight: bold; color: #1e3c72; }
+    .stat-label { color: #5b6e8c; }
+    .pending-list { max-height: 300px; overflow-y: auto; text-align: left; margin-top: 0.5rem; }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content { background: white; margin: 5% auto; width: 90%; max-width: 600px; border-radius: 24px; padding: 1.5rem; position: relative; max-height: 80vh; overflow-y: auto; }
+    .close { position: absolute; right: 1rem; top: 0.5rem; font-size: 1.8rem; cursor: pointer; }
+    @media (max-width: 700px) { .dashboard { flex-direction: column; } .vehicle-list-panel, .vehicle-detail-panel { height: auto; max-height: 50vh; } }
+    .config-checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+    .config-checkbox-group label { display: flex; align-items: center; gap: 0.5rem; font-weight: normal; }
+    .config-checkbox-group input[type="checkbox"] { width: auto; margin-right: 5px; }
+    .field-required { color: #c0392b; font-weight: bold; margin-left: 3px; }
+    .badge-societe { background: #1e3c72; color: white; padding: 0.1rem 0.5rem; border-radius: 20px; font-size: 0.6rem; }
+    .filter-societe { flex: 0.5; min-width: 100px; }
+    .btn-config { background: #f39c12; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+<header>
+  <h1><i class="fas fa-truck-moving"></i> NTR-APP - SAV Multi-Sociétés</h1>
+  <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+    <button id="exportExcelBtn" class="btn-primary" style="background:#2e7d32;"><i class="fas fa-file-excel"></i> Excel</button>
+    <button id="exportPdfBtn" class="btn-primary" style="background:#c62828;"><i class="fas fa-file-pdf"></i> PDF</button>
+    <button id="importExcelBtn" class="btn-secondary"><i class="fas fa-file-import"></i> Importer Excel</button>
+    <button id="backupDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Sauvegarder</button>
+    <button id="restoreDataBtn" class="btn-secondary"><i class="fas fa-upload"></i> Restaurer</button>
+    <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
+  </div>
+</header>
+<div class="tabs">
+  <button class="tab-btn active" data-tab="list">📋 Liste & Détails</button>
+  <button class="tab-btn" data-tab="dashboard">📊 Tableau de bord</button>
+</div>
 
-      body {
-        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-        background: #f4f6f9;
-        color: #1a2c3e;
-        line-height: 1.4;
-      }
-
-      header {
-        background: #0a2942;
-        color: white;
-        padding: 0.8rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-        border-bottom: 1px solid #1e4a6e;
-      }
-
-      header h1 {
-        font-size: 1.3rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-      }
-
-      .btn-primary, .btn-secondary, .btn-danger {
-        border: none;
-        padding: 0.45rem 1rem;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 0.85rem;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
-        font-family: inherit;
-      }
-
-      .btn-primary {
-        background: #2c5f8a;
-        color: white;
-      }
-      .btn-primary:hover {
-        background: #1e4668;
-      }
-
-      .btn-secondary {
-        background: #eef2f5;
-        color: #2c5f8a;
-        border: 1px solid #dce4ec;
-      }
-      .btn-secondary:hover {
-        background: #e2e8ef;
-      }
-
-      .btn-danger {
-        background: #dc3545;
-        color: white;
-      }
-      .btn-danger:hover {
-        background: #b02a37;
-      }
-
-      .tabs {
-        display: flex;
-        gap: 0.2rem;
-        background: white;
-        padding: 0 1.5rem;
-        border-bottom: 1px solid #e2e8f0;
-      }
-      .tab-btn {
-        background: none;
-        border: none;
-        padding: 0.8rem 1.5rem;
-        font-weight: 500;
-        font-size: 0.9rem;
-        cursor: pointer;
-        color: #5a6e7c;
-        transition: all 0.2s;
-        font-family: inherit;
-      }
-      .tab-btn.active {
-        color: #2c5f8a;
-        border-bottom: 2px solid #2c5f8a;
-        font-weight: 600;
-      }
-
-      .dashboard {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        padding: 1.5rem;
-        max-width: 1600px;
-        margin: 0 auto;
-      }
-      .vehicle-list-panel, .vehicle-detail-panel {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        border: 1px solid #eef2f6;
-        overflow-y: auto;
-      }
-      .vehicle-list-panel {
-        flex: 1.2;
-        min-width: 300px;
-        padding: 1.2rem;
-        height: calc(100vh - 110px);
-      }
-      .vehicle-detail-panel {
-        flex: 3;
-        min-width: 400px;
-        padding: 1.5rem;
-        height: calc(100vh - 110px);
-      }
-
-      .search-filter {
-        display: flex;
-        gap: 0.7rem;
-        margin-bottom: 1.2rem;
-        flex-wrap: wrap;
-      }
-      .search-filter input, .search-filter select {
-        flex: 1;
-        padding: 0.5rem 0.8rem;
-        border: 1px solid #dce4ec;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        background: white;
-        font-family: inherit;
-      }
-
-      .vehicles-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.7rem;
-      }
-      .vehicle-card {
-        background: #fafcfd;
-        border-left: 3px solid #8aaec0;
-        padding: 0.8rem 1rem;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.15s;
-        border: 1px solid #edf2f6;
-        width: 100%;
-      }
-      .vehicle-card.selected {
-        background: #f0f4f9;
-        border-left-color: #2c5f8a;
-        border-color: #d0e0ec;
-      }
-      .vehicle-card:hover {
-        background: #f5f8fb;
-      }
-      .vehicle-card h4 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        margin-bottom: 0.3rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .vehicle-card p {
-        font-size: 0.8rem;
-        color: #5a6e7c;
-        margin-bottom: 0.3rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .vehicle-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 0.3rem;
-        flex-wrap: wrap;
-        gap: 0.3rem;
-      }
-      .status-badge {
-        display: inline-block;
-        background: #eef2f5;
-        padding: 0.2rem 0.6rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        color: #2c5f8a;
-      }
-
-      .form-group {
-        margin-bottom: 1rem;
-      }
-      .form-group label {
-        font-weight: 500;
-        font-size: 0.8rem;
-        display: block;
-        margin-bottom: 0.3rem;
-        color: #2c3e4e;
-      }
-      .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 0.5rem 0.8rem;
-        border: 1px solid #dce4ec;
-        border-radius: 10px;
-        font-family: inherit;
-        font-size: 0.85rem;
-        background: white;
-      }
-      .form-row {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 0.8rem;
-      }
-      .form-row .form-group {
-        flex: 1;
-        margin-bottom: 0;
-      }
-      .checkbox-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6rem;
-        margin-top: 0.4rem;
-        max-height: 100px;
-        overflow-y: auto;
-        padding: 0.3rem;
-      }
-      .checkbox-group label {
-        font-weight: normal;
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
-
-      .dashboard-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .stat-card {
-        background: white;
-        border-radius: 16px;
-        padding: 1rem;
-        text-align: center;
-        border: 1px solid #eef2f6;
-      }
-      .stat-number {
-        font-size: 1.8rem;
-        font-weight: 600;
-        color: #0a2942;
-        line-height: 1.2;
-      }
-      .stat-label {
-        font-size: 0.75rem;
-        color: #6c8396;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-      .alert-card {
-        background: #fefaf5;
-        border-left: 3px solid #e67e22;
-      }
-      .pending-list {
-        max-height: 200px;
-        overflow-y: auto;
-        text-align: left;
-        font-size: 0.8rem;
-        margin-top: 0.5rem;
-      }
-      .flex-btns {
-        display: flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        margin-top: 0.8rem;
-      }
-
-      .map-container {
-        height: 220px;
-        border-radius: 12px;
-        margin: 0.5rem 0 0.8rem;
-        background: #eef2f5;
-        border: 1px solid #e2e8f0;
-      }
-      .photo-preview {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-      }
-      .photo-preview img {
-        width: 70px;
-        height: 70px;
-        object-fit: cover;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-      }
-
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.4);
-        backdrop-filter: blur(2px);
-      }
-      .modal-content {
-        background: white;
-        margin: 10% auto;
-        width: 90%;
-        max-width: 500px;
-        border-radius: 20px;
-        padding: 1.5rem;
-        position: relative;
-      }
-      .close {
-        position: absolute;
-        right: 1.2rem;
-        top: 0.8rem;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #8aa0ae;
-      }
-
-      .placeholder {
-        text-align: center;
-        padding: 2rem;
-        color: #8aa0ae;
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-
-      .toast-notification {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #2c5f8a;
-        color: white;
-        padding: 0.8rem 1.5rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        z-index: 2000;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      }
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-
-      @media (max-width: 700px) {
-        .dashboard { flex-direction: column; }
-        .vehicle-list-panel, .vehicle-detail-panel { height: auto; max-height: 60vh; }
-        header { flex-direction: column; align-items: stretch; }
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1><i class="fas fa-chart-line"></i> BNETD TRACKER</h1>
-      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap">
-        <button id="exportExcelBtn" class="btn-primary"><i class="fas fa-file-excel"></i> Excel</button>
-        <button id="exportPdfBtn" class="btn-primary"><i class="fas fa-file-pdf"></i> PDF</button>
-        <button id="backupDataBtn" class="btn-secondary"><i class="fas fa-download"></i> Sauvegarder</button>
-        <button id="restoreDataBtn" class="btn-secondary"><i class="fas fa-upload"></i> Restaurer</button>
-        <button id="addVehicleBtn" class="btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
+<main class="dashboard" id="mainContainer">
+  <div id="tab-list" style="display: flex; gap: 1.5rem; width: 100%; flex-wrap: wrap;">
+    <aside class="vehicle-list-panel">
+      <div class="search-filter">
+        <input type="text" id="searchInput" placeholder="🔍 Plaque, client...">
+        <select id="societeFilter" class="filter-societe">
+          <option value="all">Toutes sociétés</option>
+        </select>
+        <select id="statusFilter">
+          <option value="all">Tous statuts</option>
+          <option value="Réceptionné">📥 Réceptionné</option>
+          <option value="Diagnostic en cours">🔧 Diagnostic</option>
+          <option value="En attente accord client">⏳ Attente accord</option>
+          <option value="Travaux en cours">⚙️ Travaux en cours</option>
+          <option value="Prêt pour livraison">✅ Prêt livraison</option>
+          <option value="Livré">🏁 Livré</option>
+        </select>
+        <button id="configBtn" class="btn-config"><i class="fas fa-cog"></i> Configurer</button>
       </div>
-    </header>
+      <div id="vehiclesList" class="vehicles-list">Chargement...</div>
+    </aside>
+    <section class="vehicle-detail-panel">
+      <div id="detailPlaceholder" class="placeholder"><i class="fas fa-car-side"></i><p>Sélectionnez un véhicule</p></div>
+      <div id="vehicleDetailForm" style="display: none;"></div>
+    </section>
+  </div>
+  <div id="tab-dashboard" style="display: none; width: 100%;">
+    <div class="dashboard-stats" id="statsContainer"></div>
+    <div class="dashboard-stats" id="pendingAccordContainer"></div>
+    <div id="chartContainer" style="background: white; border-radius: 20px; padding: 1rem; margin-top: 1rem;"></div>
+  </div>
+</main>
 
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="list">📋 Liste & Détails</button>
-      <button class="tab-btn" data-tab="dashboard">📊 Tableau de bord</button>
+<!-- Modale d'ajout rapide -->
+<div id="addModal" class="modal">
+  <div class="modal-content"><span class="close">&times;</span><h2>Nouveau véhicule</h2>
+    <form id="quickAddForm">
+      <input type="text" id="newPlaque" placeholder="Plaque *" required>
+      <input type="text" id="newClient" placeholder="Client / Société *" required>
+      <input type="text" id="newModel" placeholder="Modèle">
+      <button type="submit" class="btn-primary">Créer</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modale de configuration des champs -->
+<div id="configModal" class="modal">
+  <div class="modal-content"><span class="close" id="configClose">&times;</span>
+    <h2>⚙️ Configuration des champs pour <span id="configSocieteName">BNETD</span></h2>
+    <p style="font-size:0.9rem; color:#5b6e8c; margin-bottom:1rem;">Cochez les champs que vous souhaitez afficher dans le formulaire. Les champs obligatoires sont marqués d'une <span class="field-required">*</span>.</p>
+    <div id="configFieldsContainer" class="config-checkbox-group">
+      <!-- Généré par JS -->
     </div>
+    <button id="saveConfigBtn" class="btn-primary" style="margin-top:1rem;">Enregistrer la configuration</button>
+  </div>
+</div>
 
-    <main class="dashboard" id="mainContainer">
-      <div id="tab-list" style="display: flex; gap: 1.5rem; width: 100%; flex-wrap: wrap">
-        <aside class="vehicle-list-panel">
-          <div class="search-filter">
-            <input type="text" id="searchInput" placeholder="🔍 Plaque, client..." />
-            <select id="statusFilter">
-              <option value="all">Tous statuts</option>
-              <option value="Réceptionné">📥 Réceptionné</option>
-              <option value="Diagnostic en cours">🔧 Diagnostic</option>
-              <option value="En attente accord client">⏳ Attente accord</option>
-              <option value="Travaux en cours">⚙️ Travaux en cours</option>
-              <option value="Prêt pour livraison">✅ Prêt livraison</option>
-              <option value="Livré">🏁 Livré</option>
-            </select>
-          </div>
-          <div id="vehiclesList" class="vehicles-list">Chargement...</div>
-        </aside>
-        <section class="vehicle-detail-panel">
-          <div id="detailPlaceholder" class="placeholder">
-            <i class="fas fa-car-side" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-            <p>Sélectionnez un véhicule</p>
-          </div>
-          <div id="vehicleDetailForm" style="display: none"></div>
-        </section>
-      </div>
-
-      <div id="tab-dashboard" style="display: none; width: 100%">
-        <div class="dashboard-stats" id="statsContainer"></div>
-        <div class="dashboard-stats" id="pendingAccordContainer"></div>
-        <div class="stat-card alert-card" style="text-align: left;">
-          <div class="stat-label">⚠️ Véhicules SANS numéro d'intervention</div>
-          <div class="stat-number" id="countNoIntervention">0</div>
-          <div class="flex-btns">
-            <button id="exportNoInterventionExcel" class="btn-secondary">Excel</button>
-            <button id="exportNoInterventionPdf" class="btn-secondary">PDF</button>
-          </div>
-        </div>
-        <div class="stat-card alert-card" style="text-align: left;">
-          <div class="stat-label">⏳ Véhicules non livrés depuis trop longtemps</div>
-          <div style="margin: 10px 0; display: flex; align-items: center; gap: 1rem;">
-            <select id="delaySelect" style="padding: 0.3rem; border-radius: 8px;">
-              <option value="7">+ d'1 semaine</option>
-              <option value="30" selected>+ d'1 mois</option>
-              <option value="365">+ d'1 an</option>
-            </select>
-            <span id="countOverdue" style="font-size: 1.5rem; font-weight: 600;">0</span>
-          </div>
-          <div id="overdueListPreview" class="pending-list"></div>
-          <div class="flex-btns">
-            <button id="exportOverdueExcel" class="btn-secondary">Excel (retard)</button>
-            <button id="exportOverduePdf" class="btn-secondary">PDF (retard)</button>
-          </div>
-        </div>
-        <div class="stat-card" style="text-align: left;">
-          <div class="stat-label">📂 Exports spécifiques</div>
-          <div class="flex-btns">
-            <button id="exportLivresExcel" class="btn-secondary">Excel - Livrés</button>
-            <button id="exportLivresPdf" class="btn-secondary">PDF - Livrés</button>
-            <button id="exportNonLivresExcel" class="btn-secondary">Excel - Non livrés</button>
-            <button id="exportNonLivresPdf" class="btn-secondary">PDF - Non livrés</button>
-          </div>
-        </div>
-        <div id="chartContainer" style="background: white; border-radius: 16px; padding: 1rem; margin-top: 1rem; border: 1px solid #eef2f6;"></div>
-      </div>
-    </main>
-
-    <div id="addModal" class="modal">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Nouveau véhicule</h2>
-        <form id="quickAddForm">
-          <input type="text" id="newPlaque" placeholder="Plaque *" required style="width:100%; padding:0.6rem; margin-bottom:0.8rem; border-radius:10px; border:1px solid #dce4ec;" />
-          <input type="text" id="newClient" placeholder="Client *" required style="width:100%; padding:0.6rem; margin-bottom:0.8rem; border-radius:10px; border:1px solid #dce4ec;" />
-          <input type="text" id="newModel" placeholder="Modèle" style="width:100%; padding:0.6rem; margin-bottom:1rem; border-radius:10px; border:1px solid #dce4ec;" />
-          <button type="submit" class="btn-primary" style="width:100%;">Créer</button>
-        </form>
-      </div>
+<!-- Modale d'import Excel -->
+<div id="importModal" class="modal">
+  <div class="modal-content"><span class="close" id="importClose">&times;</span>
+    <h2>📁 Importer un fichier Excel</h2>
+    <p style="font-size:0.9rem; color:#5b6e8c; margin-bottom:1rem;">Sélectionnez un fichier .xlsx ou .xls contenant une ligne d'en-tête. L'application va vous permettre de mapper les colonnes.</p>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <div id="importMapping" style="margin-top:1rem; display:none;">
+      <h3>Correspondance des colonnes</h3>
+      <div id="mappingFields" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin:1rem 0;"></div>
+      <button id="confirmImportBtn" class="btn-primary">Confirmer l'import</button>
     </div>
+    <div id="importStatus" style="margin-top:1rem;"></div>
+  </div>
+</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-      // ======================== FONCTION NOTIFICATION ========================
-      function showNotification(message, isError = false) {
-        const notification = document.createElement('div');
-        notification.className = 'toast-notification';
-        notification.style.background = isError ? '#dc3545' : '#2c5f8a';
-        notification.innerHTML = '<i class="fas fa-' + (isError ? 'exclamation-triangle' : 'check-circle') + '"></i> ' + message;
-        document.body.appendChild(notification);
-        setTimeout(() => { notification.remove(); }, 3000);
-      }
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ======================== CONFIGURATION DES CHAMPS PAR SOCIÉTÉ ========================
+const ALL_FIELDS = [
+  { id: 'societe', label: 'Société', required: true },
+  { id: 'plaque', label: 'Immatriculation', required: true },
+  { id: 'client', label: 'Client', required: true },
+  { id: 'marque', label: 'Marque', required: false },
+  { id: 'modele', label: 'Modèle', required: false },
+  { id: 'statut', label: 'Statut', required: false },
+  { id: 'dateCreation', label: 'Date de création', required: false },
+  { id: 'dateLivraison', label: 'Date de livraison', required: false },
+  { id: 'kilometrage', label: 'Kilométrage', required: false },
+  { id: 'chassis', label: 'N° Châssis', required: false },
+  { id: 'energie', label: 'Énergie', required: false },
+  { id: 'niveauCarburant', label: 'Niveau carburant', required: false },
+  { id: 'miseEnService', label: 'Mise en service', required: false },
+  { id: 'proprietaireNom', label: 'Nom propriétaire', required: false },
+  { id: 'proprietaireContact', label: 'Contact propriétaire', required: false },
+  { id: 'chauffeurNom', label: 'Chauffeur déposant', required: false },
+  { id: 'chauffeurContact', label: 'Contact chauffeur', required: false },
+  { id: 'transmission', label: 'Transmission', required: false },
+  { id: 'couleur', label: 'Couleur', required: false },
+  { id: 'puissance', label: 'Puissance', required: false },
+  { id: 'finAssurance', label: 'Fin assurance', required: false },
+  { id: 'finVignette', label: 'Fin vignette', required: false },
+  { id: 'numeroIntervention', label: 'Numéro d\'intervention', required: false },
+  { id: 'travauxClient', label: 'Pannes signalées', required: false },
+  { id: 'rapportDiagnostic', label: 'Rapport diagnostic', required: false },
+  { id: 'pieces', label: 'Pièces à remplacer', required: false },
+  { id: 'observations', label: 'Observations', required: false },
+  { id: 'accessoires', label: 'Accessoires', required: false },
+  { id: 'documents', label: 'Documents', required: false },
+  { id: 'positionGeo', label: 'Position géographique', required: false },
+  { id: 'photos', label: 'Photos', required: false }
+];
 
-      // ======================== DONNÉES BNETD ========================
-      const bnetdRaw = [
-        { nb: 1, dateCreation: "2026-05-06 09:08:52", immat: "853LY01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 2, dateCreation: "2026-05-05 10:24:40", immat: "2467KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "" },
-        { nb: 3, dateCreation: "2026-04-28 16:58:50", immat: "3235KL01", marque: "CHANGAN", modele: "HUNTER", pannes: "", rapport: "", pieces: "", positionGeo: "DEPOT 1" },
-        { nb: 4, dateCreation: "2026-04-28 14:50:06", immat: "41LA01", marque: "CHANGAN", modele: "HUNTER", pannes: "BRUIT ANORMAL DANS LE MOTEUR", rapport: "BRUIT DE BIELLE", pieces: "MOTEUR + INJECTEURS", positionGeo: "DEPOT AEROPORT" },
-        { nb: 5, dateCreation: "2026-04-28 14:40:37", immat: "AA969LR", marque: "DONGFENG", modele: "RICH6-ZNA", pannes: "VEHICULE REMORQUE", rapport: "ABSENCE DU MOTEUR", pieces: "MOTEUR COMPLET", positionGeo: "DEPOT AEROPORT" }
-      ];
+const DEFAULT_CONFIG = {
+  'BNETD': [
+    'societe', 'plaque', 'client', 'marque', 'modele', 'statut', 'dateCreation', 'dateLivraison',
+    'kilometrage', 'chassis', 'energie', 'niveauCarburant', 'miseEnService',
+    'proprietaireNom', 'proprietaireContact', 'chauffeurNom', 'chauffeurContact',
+    'transmission', 'couleur', 'puissance', 'finAssurance', 'finVignette',
+    'numeroIntervention', 'travauxClient', 'rapportDiagnostic', 'pieces', 'observations',
+    'accessoires', 'documents', 'positionGeo', 'photos'
+  ]
+};
 
-      const accessoriesList = [
-        "Roue de secours", "Cric", "Triangle", "Extincteur", "Trousse de secours", "Gilet jaune",
-        "Manivelle", "Poste radio", "CD", "Radio VHF", "Clé de roue", "Enjoliveurs", "Tapis au sol", "Axe de remorquage"
-      ];
-      const documentsList = [
-        "Carte grise", "Certificat d'immatriculation", "Attestation assurance", "Permis de conduire",
-        "Carnet d'entretien", "Manuel d'utilisation", "Vignette", "Carte SICTa", "Patente", "Carte de stationnement", "Carte de transport"
-      ];
+function getFieldConfig(societe) {
+  const saved = localStorage.getItem(`field_config_${societe}`);
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  return DEFAULT_CONFIG[societe] || DEFAULT_CONFIG['BNETD'];
+}
 
-      function getCoordFromPositionGeo(pos) {
-        if (!pos) return { lat: 5.3364, lng: -4.0267, adresse: "Abidjan" };
-        const lower = pos.toLowerCase();
-        if (lower.includes("aeroport")) return { lat: 5.2614, lng: -3.9268, adresse: "Aéroport d'Abidjan" };
-        if (lower.includes("depot 1")) return { lat: 5.3364, lng: -4.0267, adresse: "Dépôt 1, Abidjan" };
-        if (lower.includes("depot 2")) return { lat: 5.3411, lng: -4.0211, adresse: "Dépôt 2, Abidjan" };
-        return { lat: 5.3364, lng: -4.0267, adresse: pos || "Abidjan" };
-      }
+function saveFieldConfig(societe, fields) {
+  localStorage.setItem(`field_config_${societe}`, JSON.stringify(fields));
+}
 
-      let vehicles = [];
-      let selectedVehicleId = null;
-      let map = null, marker = null;
-      const DEFAULT_POSITION = { lat: 5.3364, lng: -4.0267 };
-      const DEFAULT_ZOOM = 12;
-      const vehiclesListDiv = document.getElementById("vehiclesList");
-      const detailFormDiv = document.getElementById("vehicleDetailForm");
-      const placeholderDiv = document.getElementById("detailPlaceholder");
-      const addModal = document.getElementById("addModal");
-      const searchInput = document.getElementById("searchInput");
-      const statusFilter = document.getElementById("statusFilter");
+// ======================== DONNÉES BNETD (47 véhicules) ========================
+const bnetdRaw = [
+  { nb:1, dateCreation:"2026-05-06 09:08:52", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:2, dateCreation:"2026-05-05 10:24:40", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:3, dateCreation:"2026-04-28 16:58:50", immat:"3235KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:4, dateCreation:"2026-04-28 14:50:06", immat:"41LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport:"BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:5, dateCreation:"2026-04-28 14:40:37", immat:"AA969LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:6, dateCreation:"2026-04-25 12:32:17", immat:"AA829VZ", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:7, dateCreation:"2026-04-25 12:27:33", immat:"AA677EY", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:8, dateCreation:"2026-04-25 12:22:43", immat:"855LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:9, dateCreation:"2026-04-25 12:19:04", immat:"2458KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:10, dateCreation:"2026-04-25 10:46:39", immat:"38LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:11, dateCreation:"2026-04-25 09:17:09", immat:"2502KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:12, dateCreation:"2026-04-24 08:40:03", immat:"AA601AF", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT AEROPORT" },
+  { nb:13, dateCreation:"2026-04-23 13:43:35", immat:"5897HF01", marque:"TOYOTA", modele:"HILUX", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:14, dateCreation:"2026-04-23 13:21:34", immat:"6763JE01", marque:"MITSUBISHI", modele:"L200", pannes:"FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport:"MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces:"MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", positionGeo:"DEPOT 2" },
+  { nb:15, dateCreation:"2026-04-23 13:12:31", immat:"58LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT 2" },
+  { nb:16, dateCreation:"2026-04-21 17:14:21", immat:"64LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
+  { nb:17, dateCreation:"2026-04-21 14:36:31", immat:"221LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:18, dateCreation:"2026-04-20 14:39:31", immat:"2296KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:19, dateCreation:"2026-04-16 15:53:20", immat:"AA153PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:20, dateCreation:"2026-04-16 12:36:47", immat:"2309KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:21, dateCreation:"2026-04-07 15:08:33", immat:"AA248SX", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:22, dateCreation:"2026-04-07 12:40:54", immat:"7887JT01", marque:"BMW", modele:"520I", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:23, dateCreation:"2026-04-02 16:52:19", immat:"AA223LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:24, dateCreation:"2026-04-02 16:46:01", immat:"AA285AL", marque:"FORD", modele:"Territory", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:25, dateCreation:"2026-04-01 16:57:21", immat:"2303KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:26, dateCreation:"2026-04-01 16:53:25", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:27, dateCreation:"2026-04-01 11:47:26", immat:"2910KB01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:28, dateCreation:"2026-04-01 09:11:21", immat:"94LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:29, dateCreation:"2026-03-31 12:49:13", immat:"AA175PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:30, dateCreation:"2026-03-30 08:51:15", immat:"1922LZ01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:31, dateCreation:"2026-03-27 16:28:36", immat:"AA986PF", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:32, dateCreation:"2026-03-27 16:22:04", immat:"AA678BX", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:33, dateCreation:"2026-03-27 12:31:21", immat:"260LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT AEROPORT" },
+  { nb:34, dateCreation:"2026-03-26 16:40:27", immat:"2462KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:35, dateCreation:"2026-03-26 15:44:57", immat:"2503KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport:"SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
+  { nb:36, dateCreation:"2026-03-25 17:12:37", immat:"862LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - FUMEE NOIRE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT 2" },
+  { nb:37, dateCreation:"2026-03-25 17:09:33", immat:"75LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"DIAGNOSTIC", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:38, dateCreation:"2026-03-25 15:08:06", immat:"56LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces:"MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
+  { nb:39, dateCreation:"2026-03-25 09:19:26", immat:"AA445CA", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:40, dateCreation:"2026-03-25 09:15:34", immat:"AA150CB", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:41, dateCreation:"2026-03-25 09:09:19", immat:"212JJ01", marque:"RENAULT", modele:"LOGAN", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:42, dateCreation:"2026-03-25 09:04:39", immat:"1207JP01", marque:"RENAULT", modele:"DUSTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
+  { nb:43, dateCreation:"2026-05-12 09:04:39", immat:"AA933VZ", marque:"DONGFENG", modele:"RICH6 ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"UNITED MOTORS" },
+  { nb:44, dateCreation:"2026-05-13 00:00:00", immat:"63LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"" },
+  { nb:45, dateCreation:"2026-05-19 00:00:00", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR", pieces:"MOTEUR + TURBO", positionGeo:"GARAGE 2" },
+  { nb:46, dateCreation:"2026-05-20 00:00:00", immat:"2667KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR - VISTE TECHNIQUE", pieces:"", positionGeo:"DEPOT 1" },
+  { nb:47, dateCreation:"2026-06-01 00:00:00", immat:"AA609VE", marque:"MITSUBISHI", modele:"L200", pannes:"PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport:"", pieces:"", positionGeo:"GARAGE 2" }
+];
 
-      function getEmptyVehicle(plaque, client, modele) {
-        return {
-          id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
-          client: client || "",
-          plaque: plaque || "",
-          marque: "",
-          modele: modele || "",
-          statut: "Réceptionné",
-          dateCreation: new Date().toISOString().slice(0, 19).replace("T", " "),
-          dateLivraison: "",
-          kilometrage: "",
-          chassis: "",
-          energie: "Diesel",
-          niveauCarburant: "1/2",
-          miseEnService: "",
-          proprietaireNom: "",
-          proprietaireContact: "",
-          chauffeurNom: "",
-          chauffeurContact: "",
-          transmission: "Manuelle",
-          couleur: "",
-          puissance: "",
-          finAssurance: "",
-          finVignette: "",
-          travauxClient: "",
-          rapportDiagnostic: "",
-          pieces: "",
-          observations: "",
-          positionGeo: "",
-          position: DEFAULT_POSITION,
-          adresseTexte: "Abidjan",
-          accessoires: [],
-          documents: [],
-          photos: [],
-          numeroIntervention: "",
-          history: [{ date: new Date().toISOString(), action: "Création dossier", status: "Réceptionné" }]
-        };
-      }
+function getCoordFromPositionGeo(pos) {
+  if (!pos) return { lat:5.3364, lng:-4.0267, adresse:"Abidjan" };
+  const lower = pos.toLowerCase();
+  if (lower.includes("aeroport")) return { lat:5.2614, lng:-3.9268, adresse:"Aéroport d'Abidjan" };
+  if (lower.includes("depot 1")) return { lat:5.3364, lng:-4.0267, adresse:"Dépôt 1, Abidjan" };
+  if (lower.includes("depot 2")) return { lat:5.3411, lng:-4.0211, adresse:"Dépôt 2, Abidjan" };
+  if (lower.includes("garage 2")) return { lat:5.3497, lng:-4.0161, adresse:"Garage 2, Abidjan" };
+  if (lower.includes("united motors")) return { lat:5.3542, lng:-4.0089, adresse:"United Motors, Abidjan" };
+  return { lat:5.3364, lng:-4.0267, adresse:pos || "Abidjan" };
+}
 
-      function saveVehicles() { 
-        localStorage.setItem("sav_vehicles", JSON.stringify(vehicles));
-      }
-      
-      function loadVehicles() {
-        const data = localStorage.getItem("sav_vehicles");
-        if (data && JSON.parse(data).length > 0) {
-          try {
-            let loaded = JSON.parse(data);
-            vehicles = loaded.map(v => ({ ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || ""), ...v }));
-          } catch(e) { vehicles = []; }
-        }
-        if (!vehicles || vehicles.length === 0) {
-          vehicles = bnetdRaw.map((row, idx) => {
-            const pos = getCoordFromPositionGeo(row.positionGeo);
-            return { ...getEmptyVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`), 
-              id: `bnetd_${idx}_${Date.now()}`,
-              dateCreation: row.dateCreation, 
-              marque: row.marque, 
-              modele: row.modele, 
-              travauxClient: row.pannes, 
-              rapportDiagnostic: row.rapport, 
-              pieces: row.pieces, 
-              positionGeo: row.positionGeo, 
-              position: pos, 
-              adresseTexte: pos.adresse 
-            };
-          });
-        }
-        saveVehicles();
-        renderVehicleList();
-        if (document.getElementById("tab-dashboard").style.display === "block") renderDashboard();
-      }
+// ======================== APPLICATION ========================
+let vehicles = [];
+let selectedVehicleId = null;
+let map = null, marker = null;
+const DEFAULT_POSITION = { lat:5.3364, lng:-4.0267 };
+const DEFAULT_ZOOM = 12;
 
-      function renderVehicleList() {
-        const filterText = searchInput.value.toLowerCase();
-        const filterStatus = statusFilter.value;
-        let filtered = vehicles.filter(v => 
-          (v.plaque.toLowerCase().includes(filterText) || 
-           v.client.toLowerCase().includes(filterText) || 
-           (v.modele && v.modele.toLowerCase().includes(filterText))) && 
-          (filterStatus === "all" || v.statut === filterStatus)
-        );
-        
-        if (filtered.length === 0) { 
-          vehiclesListDiv.innerHTML = '<div class="placeholder">Aucun véhicule</div>'; 
-          return; 
-        }
-        
-        vehiclesListDiv.innerHTML = filtered.map(v => `
-          <div class="vehicle-card ${selectedVehicleId === v.id ? "selected" : ""}" data-id="${v.id}">
-            <h4><i class="fas fa-car"></i> ${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h4>
-            <p><i class="fas fa-tag"></i> ${escapeHtml(v.marque)} ${escapeHtml(v.modele)}</p>
-            <div class="vehicle-card-footer">
-              <span class="status-badge"><i class="fas fa-chart-simple"></i> ${v.statut}</span>
-              <span class="status-badge"><i class="fas fa-calendar"></i> ${v.dateCreation?.split(" ")[0] || ""}</span>
-              ${v.numeroIntervention ? `<span class="status-badge"><i class="fas fa-hashtag"></i> ${v.numeroIntervention}</span>` : ''}
-              ${v.photos?.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ""}
-            </div>
-          </div>
-        `).join("");
-        
-        document.querySelectorAll(".vehicle-card").forEach(card => 
-          card.addEventListener("click", () => selectVehicle(card.dataset.id))
-        );
-      }
-      
-      function escapeHtml(str) { 
-        if (!str) return ""; 
-        return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m]); 
-      }
-      
-      function selectVehicle(id) { 
-        selectedVehicleId = id; 
-        const v = vehicles.find(v => v.id === id); 
-        if (v) { 
-          renderVehicleList(); 
-          showDetailForm(v); 
-        } 
-      }
-      
-      function showDetailForm(v) {
-        placeholderDiv.style.display = "none";
-        detailFormDiv.style.display = "block";
-        const statusOptions = ["Réceptionné","Diagnostic en cours","En attente accord client","Travaux en cours","Prêt pour livraison","Livré"];
-        const photosHtml = (v.photos || []).map(p => `<img src="${p}">`).join("");
-        let accessoriesHtml = '<div class="checkbox-group">'; 
-        accessoriesList.forEach(acc => { 
-          const checked = v.accessoires && v.accessoires.includes(acc) ? "checked" : ""; 
-          accessoriesHtml += `<label><input type="checkbox" class="accessoire-check" value="${acc}" ${checked}> ${acc}</label>`; 
-        }); 
-        accessoriesHtml += "</div>";
-        let documentsHtml = '<div class="checkbox-group">'; 
-        documentsList.forEach(doc => { 
-          const checked = v.documents && v.documents.includes(doc) ? "checked" : ""; 
-          documentsHtml += `<label><input type="checkbox" class="document-check" value="${doc}" ${checked}> ${doc}</label>`; 
-        }); 
-        documentsHtml += "</div>";
-        
-        detailFormDiv.innerHTML = `
-          <h2><i class="fas fa-truck"></i> ${escapeHtml(v.plaque)} - ${escapeHtml(v.client)}</h2>
-          <div class="form-row">
-            <div class="form-group"><label>Numéro intervention</label><input type="text" id="detailNumeroIntervention" value="${escapeHtml(v.numeroIntervention || "")}"></div>
-            <div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s => `<option ${v.statut === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>
-            <div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(" ", "T") || ""}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(" ", "T") || ""}"></div>
-            <div class="form-group"><label>Immatriculation</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}"></div>
-            <div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div>
-            <div class="form-group"><label>Kilométrage</label><input type="number" id="detailKilometrage" value="${v.kilometrage || ""}"></div>
-            <div class="form-group"><label>N° Châssis</label><input type="text" id="detailChassis" value="${escapeHtml(v.chassis || "")}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Énergie</label><select id="detailEnergie"><option ${v.energie === "Essence" ? "selected" : ""}>Essence</option><option ${v.energie === "Diesel" ? "selected" : ""}>Diesel</option><option ${v.energie === "Électrique" ? "selected" : ""}>Électrique</option><option ${v.energie === "Hybride" ? "selected" : ""}>Hybride</option></select></div>
-            <div class="form-group"><label>Niveau carburant</label><select id="detailNiveauCarburant"><option ${v.niveauCarburant === "Vide" ? "selected" : ""}>Vide</option><option ${v.niveauCarburant === "1/4" ? "selected" : ""}>1/4</option><option ${v.niveauCarburant === "1/2" ? "selected" : ""}>1/2</option><option ${v.niveauCarburant === "3/4" ? "selected" : ""}>3/4</option><option ${v.niveauCarburant === "Plein" ? "selected" : ""}>Plein</option></select></div>
-            <div class="form-group"><label>Mise en service</label><input type="date" id="detailMiseEnService" value="${v.miseEnService || ""}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Transmission</label><select id="detailTransmission"><option ${v.transmission === "Manuelle" ? "selected" : ""}>Manuelle</option><option ${v.transmission === "Automatique" ? "selected" : ""}>Automatique</option></select></div>
-            <div class="form-group"><label>Couleur</label><input type="text" id="detailCouleur" value="${escapeHtml(v.couleur || "")}"></div>
-            <div class="form-group"><label>Puissance (ch)</label><input type="text" id="detailPuissance" value="${escapeHtml(v.puissance || "")}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Nom propriétaire</label><input type="text" id="detailProprietaireNom" value="${escapeHtml(v.proprietaireNom || "")}"></div>
-            <div class="form-group"><label>Contact propriétaire</label><input type="tel" id="detailProprietaireContact" value="${escapeHtml(v.proprietaireContact || "")}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Nom chauffeur déposant</label><input type="text" id="detailChauffeurNom" value="${escapeHtml(v.chauffeurNom || "")}"></div>
-            <div class="form-group"><label>Contact chauffeur</label><input type="tel" id="detailChauffeurContact" value="${escapeHtml(v.chauffeurContact || "")}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Fin assurance</label><input type="date" id="detailFinAssurance" value="${v.finAssurance || ""}"></div>
-            <div class="form-group"><label>Fin vignette</label><input type="date" id="detailFinVignette" value="${v.finVignette || ""}"></div>
-          </div>
-          <div class="form-group"><label>Pannes signalées (client)</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient || "")}</textarea></div>
-          <div class="form-group"><label>Rapport diagnostic (garage)</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic || "")}</textarea></div>
-          <div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces || "")}</textarea></div>
-          <div class="form-group"><label>Autres observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations || "")}</textarea></div>
-          <div class="form-group"><label>Accessoires de bord</label>${accessoriesHtml}</div>
-          <div class="form-group"><label>Documents fournis</label>${documentsHtml}</div>
-          <div class="form-group"><label>Position géographique (texte)</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo || "")}"></div>
-          <div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
-          <div class="form-group"><label>Carte</label><div id="mapContainer" class="map-container"></div><button id="getCurrentPosBtn" class="btn-secondary"><i class="fas fa-location-dot"></i> Ma position</button></div>
-          <div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger"><i class="fas fa-trash"></i> Supprimer</button><button id="saveDetailBtn" class="btn-primary"><i class="fas fa-save"></i> Enregistrer</button></div>
-        `;
-        setTimeout(() => initMap(v.position), 100);
-        document.getElementById("saveDetailBtn").addEventListener("click", () => saveVehicleDetails(v.id));
-        document.getElementById("deleteVehicleBtn").addEventListener("click", () => deleteVehicle(v.id));
-        document.getElementById("getCurrentPosBtn").addEventListener("click", () => getCurrentLocationForVehicle(v.id));
-        const up = document.getElementById("photoUpload"); 
-        if(up) up.addEventListener("change", (e) => handlePhotoUpload(v.id, e.target.files));
-      }
-      
-      function handlePhotoUpload(id, files) {
-        const v = vehicles.find(v => v.id === id);
-        if (v) {
-          Array.from(files).forEach((f) => {
-            const r = new FileReader();
-            r.onload = (e) => {
-              v.photos.push(e.target.result);
-              saveVehicles();
-              const pv = document.getElementById("photoPreview");
-              if (pv) {
-                let img = document.createElement("img");
-                img.src = e.target.result;
-                img.style.width = "70px";
-                img.style.height = "70px";
-                img.style.objectFit = "cover";
-                img.style.borderRadius = "8px";
-                pv.appendChild(img);
-              }
-              showNotification("Photo ajoutée");
-            };
-            r.readAsDataURL(f);
-          });
-        }
-      }
-      
-      function initMap(pos) {
-        if (map) map.remove();
-        const lat = pos?.lat || DEFAULT_POSITION.lat, lng = pos?.lng || DEFAULT_POSITION.lng;
-        map = L.map("mapContainer").setView([lat, lng], DEFAULT_ZOOM);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
-        if (marker) marker.remove();
-        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-        marker.on("dragend", () => updateVehiclePosition(selectedVehicleId, marker.getLatLng()));
-      }
-      
-      function updateVehiclePosition(id, coords) {
-        const v = vehicles.find(v => v.id === id);
-        if (v) {
-          v.position = { lat: coords.lat, lng: coords.lng };
-          saveVehicles();
-          showNotification("Position mise à jour");
-        }
-      }
-      
-      function getCurrentLocationForVehicle(id) {
-        if (navigator.geolocation)
-          navigator.geolocation.getCurrentPosition(p => {
-            const coords = { lat: p.coords.latitude, lng: p.coords.longitude };
-            updateVehiclePosition(id, coords);
-            if (marker) marker.setLatLng(coords);
-            if (map) map.setView([coords.lat, coords.lng], DEFAULT_ZOOM);
-          }, () => alert("Géolocalisation refusée"));
-        else alert("Non supporté");
-      }
-      
-      function saveVehicleDetails(id) {
-        const v = vehicles.find(v => v.id === id); 
-        if (!v) return;
-        v.numeroIntervention = document.getElementById("detailNumeroIntervention").value;
-        v.statut = document.getElementById("detailStatus").value;
-        v.dateCreation = document.getElementById("detailDateCreation").value?.replace("T", " ");
-        v.dateLivraison = document.getElementById("detailDateLivraison").value?.replace("T", " ");
-        v.plaque = document.getElementById("detailPlaque").value;
-        v.marque = document.getElementById("detailMarque").value;
-        v.modele = document.getElementById("detailModele").value;
-        v.kilometrage = document.getElementById("detailKilometrage").value;
-        v.chassis = document.getElementById("detailChassis").value;
-        v.energie = document.getElementById("detailEnergie").value;
-        v.niveauCarburant = document.getElementById("detailNiveauCarburant").value;
-        v.miseEnService = document.getElementById("detailMiseEnService").value;
-        v.transmission = document.getElementById("detailTransmission").value;
-        v.couleur = document.getElementById("detailCouleur").value;
-        v.puissance = document.getElementById("detailPuissance").value;
-        v.proprietaireNom = document.getElementById("detailProprietaireNom").value;
-        v.proprietaireContact = document.getElementById("detailProprietaireContact").value;
-        v.chauffeurNom = document.getElementById("detailChauffeurNom").value;
-        v.chauffeurContact = document.getElementById("detailChauffeurContact").value;
-        v.finAssurance = document.getElementById("detailFinAssurance").value;
-        v.finVignette = document.getElementById("detailFinVignette").value;
-        v.travauxClient = document.getElementById("detailPannes").value;
-        v.rapportDiagnostic = document.getElementById("detailRapport").value;
-        v.pieces = document.getElementById("detailPieces").value;
-        v.observations = document.getElementById("detailObservations").value;
-        v.positionGeo = document.getElementById("detailPositionGeo").value;
-        v.accessoires = Array.from(document.querySelectorAll(".accessoire-check:checked")).map(cb => cb.value);
-        v.documents = Array.from(document.querySelectorAll(".document-check:checked")).map(cb => cb.value);
-        saveVehicles(); 
-        renderVehicleList(); 
-        showNotification("Véhicule enregistré");
-      }
-      
-      function deleteVehicle(id) { 
-        if (confirm("Supprimer définitivement ce véhicule ?")) {
-          vehicles = vehicles.filter(v => v.id !== id); 
-          if (selectedVehicleId === id) { 
-            selectedVehicleId = null; 
-            detailFormDiv.style.display = "none"; 
-            placeholderDiv.style.display = "block"; 
-          } 
-          saveVehicles(); 
-          renderVehicleList(); 
-          showNotification("Véhicule supprimé", true);
-        } 
-      }
-      
-      function addVehicle(plaque, client, modele) { 
-        const newVehicle = getEmptyVehicle(plaque, client, modele); 
-        vehicles.push(newVehicle); 
-        saveVehicles(); 
-        renderVehicleList(); 
-        selectVehicle(newVehicle.id);
-        showNotification("Nouveau véhicule créé");
-      }
+// LISTES ACCESSOIRES ET DOCUMENTS (inchangées)
+const accessoriesList = [
+  "Roue de secours", "Cric", "Triangle", "Extincteur", "Trousse de secours", "Gilet jaune",
+  "Manivelle", "Poste radio", "CD", "Radio VHF", "Clé de roue", "Enjoliveurs", "Tapis au sol", "Axe de remorquage"
+];
+const documentsList = [
+  "Carte grise", "Certificat d'immatriculation", "Attestation assurance", "Permis de conduire",
+  "Carnet d'entretien", "Manuel d'utilisation", "Vignette", "Carte SICTA", "Patente",
+  "Carte de stationnement", "Carte de transport"
+];
 
-      // ======================== EXPORTS PDF CORRIGÉS ========================
-      function generatePDFContent(list, title, isFullReport = false) {
-        const now = new Date();
-        let html = `
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>${title}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              h1 { color: #0a2942; text-align: center; }
-              .header { text-align: center; margin-bottom: 20px; }
-              .date { color: #666; font-size: 12px; text-align: center; margin-bottom: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th { background: #0a2942; color: white; padding: 10px; text-align: left; }
-              td { padding: 8px; border-bottom: 1px solid #ddd; }
-              tr:nth-child(even) { background: #f9f9f9; }
-              .footer { text-align: center; margin-top: 30px; font-size: 10px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>${title}</h1>
-              <div class="date">Généré le ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}</div>
-              <div>Total: ${list.length} véhicule(s)</div>
-            </div>
-        `;
-        
-        if (isFullReport) {
-          html += `
-            <table>
-              <thead>
-                <tr><th>#</th><th>N° Intervention</th><th>Client</th><th>Date création</th><th>Date livraison</th><th>Immatriculation</th><th>Marque</th><th>Modèle</th><th>Statut</th><th>Position</th></tr>
-              </thead>
-              <tbody>
-          `;
-          list.forEach((v, idx) => {
-            html += `<tr>
-              <td>${idx+1}</td>
-              <td>${escapeHtml(v.numeroIntervention || '-')}</td>
-              <td>${escapeHtml(v.client)}</td>
-              <td>${v.dateCreation?.split(' ')[0] || '-'}</td>
-              <td>${v.dateLivraison?.split(' ')[0] || '-'}</td>
-              <td>${escapeHtml(v.plaque)}</td>
-              <td>${escapeHtml(v.marque || '-')}</td>
-              <td>${escapeHtml(v.modele || '-')}</td>
-              <td>${v.statut}</td>
-              <td>${escapeHtml(v.positionGeo || '-')}</td>
-            </tr>`;
-          });
-          html += `</tbody></table>`;
-        } else {
-          html += `
-            <table>
-              <thead><tr><th>#</th><th>N° Intervention</th><th>Client</th><th>Immatriculation</th><th>Marque</th><th>Modèle</th><th>Statut</th></tr></thead>
-              <tbody>
-          `;
-          list.forEach((v, idx) => {
-            html += `<tr>
-              <td>${idx+1}</td>
-              <td>${escapeHtml(v.numeroIntervention || '-')}</td>
-              <td>${escapeHtml(v.client)}</td>
-              <td>${escapeHtml(v.plaque)}</td>
-              <td>${escapeHtml(v.marque || '-')}</td>
-              <td>${escapeHtml(v.modele || '-')}</td>
-              <td>${v.statut}</td>
-            </tr>`;
-          });
-          html += `</tbody></table>`;
-        }
-        
-        html += `<div class="footer">Document généré par BNETD TRACKER</div></body></html>`;
-        return html;
-      }
-      
-      function exportToPDF() {
-        const content = generatePDFContent(vehicles, "LISTE COMPLÈTE DES VÉHICULES", true);
-        const win = window.open();
-        win.document.write(content);
-        win.document.close();
-        setTimeout(() => {
-          win.print();
-          showNotification("Export PDF lancé");
-        }, 500);
-      }
-      
-      function exportListToPdf(list, filename, title) {
-        const content = generatePDFContent(list, title, false);
-        const win = window.open();
-        win.document.write(content);
-        win.document.close();
-        setTimeout(() => {
-          win.print();
-          showNotification(`Export ${filename} PDF lancé`);
-        }, 500);
-      }
-      
-      function exportToExcel() {
-        const data = vehicles.map((v, idx) => ({
-          NB: idx+1,
-          "Numéro intervention": v.numeroIntervention || "",
-          CLIENT: v.client,
-          "Date de création": v.dateCreation || "",
-          "Date de Livraison": v.dateLivraison || "",
-          Immatriculation: v.plaque,
-          Marque: v.marque,
-          Modèle: v.modele,
-          "PANNES SIGNALEES": v.travauxClient || "",
-          "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
-          "PIECES": v.pieces || "",
-          STATUT: v.statut,
-          "POSITION GEO": v.positionGeo || "",
-        }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Suivi BNETD");
-        XLSX.writeFile(wb, `BNETD_vehicules_${new Date().toISOString().slice(0,10)}.xlsx`);
-        showNotification("Export Excel effectué");
-      }
-      
-      function exportListToExcel(list, filename) {
-        const data = list.map((v, idx) => ({
-          NB: idx+1,
-          "Numéro intervention": v.numeroIntervention || "",
-          Client: v.client,
-          Immatriculation: v.plaque,
-          Marque: v.marque,
-          Modèle: v.modele,
-          Statut: v.statut,
-        }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Data");
-        XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
-        showNotification(`Export ${filename} Excel effectué`);
-      }
+function getEmptyVehicle(plaque, client, modele, societe = "") {
+  return {
+    id: Date.now().toString(),
+    societe: societe || client || "BNETD",
+    client: client || societe || "BNETD",
+    plaque: plaque || "",
+    marque: "",
+    modele: modele || "",
+    statut: "Réceptionné",
+    dateCreation: new Date().toISOString().slice(0,19).replace('T',' '),
+    dateLivraison: "",
+    kilometrage: "",
+    chassis: "",
+    energie: "Diesel",
+    niveauCarburant: "1/2",
+    miseEnService: "",
+    proprietaireNom: "",
+    proprietaireContact: "",
+    chauffeurNom: "",
+    chauffeurContact: "",
+    transmission: "Manuelle",
+    couleur: "",
+    puissance: "",
+    finAssurance: "",
+    finVignette: "",
+    travauxClient: "",
+    rapportDiagnostic: "",
+    pieces: "",
+    observations: "",
+    numeroIntervention: "",
+    positionGeo: "",
+    position: DEFAULT_POSITION,
+    adresseTexte: "Abidjan",
+    accessoires: [],
+    documents: [],
+    photos: [],
+    history: [{ date: new Date().toISOString(), action: "Création dossier", status: "Réceptionné" }]
+  };
+}
 
-      function renderDashboard() {
-        const total = vehicles.length;
-        const statusCount = { "Réceptionné":0, "Diagnostic en cours":0, "En attente accord client":0, "Travaux en cours":0, "Prêt pour livraison":0, "Livré":0 };
-        vehicles.forEach(v => { if(statusCount[v.statut] !== undefined) statusCount[v.statut]++; });
-        
-        document.getElementById("statsContainer").innerHTML = `
-          <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["Réceptionné"]}</div><div class="stat-label">Réceptionné</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["Diagnostic en cours"]}</div><div class="stat-label">Diagnostic</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["En attente accord client"]}</div><div class="stat-label">Attente accord</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["Travaux en cours"]}</div><div class="stat-label">Travaux</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["Prêt pour livraison"]}</div><div class="stat-label">Prêt livraison</div></div>
-          <div class="stat-card"><div class="stat-number">${statusCount["Livré"]}</div><div class="stat-label">Livrés</div></div>
-        `;
-        
-        const pending = vehicles.filter(v => v.statut !== "Livré");
-        document.getElementById("pendingAccordContainer").innerHTML = `<div class="stat-card"><div class="stat-label">🚚 Non livrés</div><div class="stat-number">${pending.length}</div><div class="pending-list"><ul>${pending.slice(0,10).map(v => `<li>${v.plaque} - ${v.client} (${v.statut})</li>`).join("")}${pending.length>10 ? '<li>...</li>' : ''}</ul></div></div>`;
-        
-        const withoutIntervention = vehicles.filter(v => !v.numeroIntervention || v.numeroIntervention.trim() === "");
-        document.getElementById("countNoIntervention").innerText = withoutIntervention.length;
-        document.getElementById("exportNoInterventionExcel").onclick = () => exportListToExcel(withoutIntervention, "sans_intervention");
-        document.getElementById("exportNoInterventionPdf").onclick = () => exportListToPdf(withoutIntervention, "sans_intervention", "Véhicules sans intervention");
-        
-        const livres = vehicles.filter(v => v.statut === "Livré");
-        const nonLivres = vehicles.filter(v => v.statut !== "Livré");
-        document.getElementById("exportLivresExcel").onclick = () => exportListToExcel(livres, "livres");
-        document.getElementById("exportLivresPdf").onclick = () => exportListToPdf(livres, "livres", "Véhicules livrés");
-        document.getElementById("exportNonLivresExcel").onclick = () => exportListToExcel(nonLivres, "non_livres");
-        document.getElementById("exportNonLivresPdf").onclick = () => exportListToPdf(nonLivres, "non_livres", "Véhicules non livrés");
-        
-        const delayDays = parseInt(document.getElementById("delaySelect").value);
-        const now = new Date();
-        const overdue = vehicles.filter(v => {
-          if (v.statut === "Livré") return false;
-          if (!v.dateCreation) return false;
-          const creation = new Date(v.dateCreation.replace(" ", "T"));
-          const diffDays = (now - creation) / (1000 * 3600 * 24);
-          return diffDays > delayDays;
-        });
-        document.getElementById("countOverdue").innerText = overdue.length;
-        document.getElementById("overdueListPreview").innerHTML = `<ul>${overdue.slice(0,10).map(v => `<li>${v.plaque} - ${v.client}</li>`).join("")}</ul>`;
-        document.getElementById("exportOverdueExcel").onclick = () => exportListToExcel(overdue, "retard");
-        document.getElementById("exportOverduePdf").onclick = () => exportListToPdf(overdue, "retard", "Véhicules en retard");
-        
-        document.getElementById("chartContainer").innerHTML = `<h3>Répartition</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v]) => `<div style="background:#eef2f5; padding:5px 12px; border-radius:20px;">${k}: ${v}</div>`).join("")}</div>`;
-      }
+function saveVehicles() { localStorage.setItem('sav_vehicles', JSON.stringify(vehicles)); }
 
-      function backupData() { 
-        const dataStr = JSON.stringify(vehicles, null, 2); 
-        const blob = new Blob([dataStr], {type:"application/json"}); 
-        const url = URL.createObjectURL(blob); 
-        const a = document.createElement("a"); 
-        a.href = url; 
-        a.download = `sauvegarde_${new Date().toISOString().slice(0,19)}.json`; 
-        a.click(); 
-        URL.revokeObjectURL(url);
-        showNotification("Sauvegarde effectuée");
-      }
-      
-      function restoreData() { 
-        const input = document.createElement("input"); 
-        input.type = "file"; 
-        input.accept = "application/json"; 
-        input.onchange = (e) => { 
-          const file = e.target.files[0]; 
-          const reader = new FileReader(); 
-          reader.onload = (ev) => { 
-            try { 
-              const restored = JSON.parse(ev.target.result); 
-              if (!Array.isArray(restored)) throw new Error(); 
-              vehicles = restored; 
-              saveVehicles(); 
-              renderVehicleList(); 
-              showNotification("Restauration réussie !");
-              if (document.getElementById("tab-dashboard").style.display === "block") renderDashboard();
-            } catch(err) { 
-              showNotification("Fichier invalide", true);
-            } 
-          }; 
-          reader.readAsText(file); 
-        }; 
-        input.click(); 
-      }
-
-      // Gestion onglets
-      document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        if (btn.dataset.tab === "list") { 
-          document.getElementById("tab-list").style.display = "flex"; 
-          document.getElementById("tab-dashboard").style.display = "none"; 
-          renderVehicleList(); 
-        } else { 
-          document.getElementById("tab-list").style.display = "none"; 
-          document.getElementById("tab-dashboard").style.display = "block"; 
-          renderDashboard(); 
-        }
+function loadVehicles() {
+  const data = localStorage.getItem('sav_vehicles');
+  if (data && JSON.parse(data).length > 0) {
+    try {
+      let loaded = JSON.parse(data);
+      vehicles = loaded.map(v => ({
+        ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || "", v.societe || v.client || "BNETD"),
+        ...v,
+        accessoires: v.accessoires || [],
+        documents: v.documents || [],
+        photos: v.photos || [],
+        history: v.history || []
       }));
-      
-      document.getElementById("addVehicleBtn").onclick = () => addModal.style.display = "block";
-      document.querySelector(".close").onclick = () => addModal.style.display = "none";
-      window.onclick = (e) => { if (e.target === addModal) addModal.style.display = "none"; };
-      document.getElementById("quickAddForm").onsubmit = (e) => { 
-        e.preventDefault(); 
-        const plaque = document.getElementById("newPlaque").value.trim(); 
-        const client = document.getElementById("newClient").value.trim(); 
-        const modele = document.getElementById("newModel").value.trim(); 
-        if (!plaque || !client) { 
-          showNotification("Plaque et client requis", true); 
-          return; 
-        } 
-        addVehicle(plaque, client, modele); 
-        addModal.style.display = "none"; 
-        document.getElementById("quickAddForm").reset(); 
+    } catch(e) { vehicles = []; }
+  }
+  if (!vehicles || vehicles.length === 0) {
+    vehicles = bnetdRaw.map((row, idx) => {
+      const pos = getCoordFromPositionGeo(row.positionGeo);
+      return {
+        ...getEmptyVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`, "BNETD"),
+        id: `bnetd_${idx}`,
+        dateCreation: row.dateCreation,
+        marque: row.marque,
+        modele: row.modele,
+        travauxClient: row.pannes,
+        rapportDiagnostic: row.rapport,
+        pieces: row.pieces,
+        positionGeo: row.positionGeo,
+        position: pos,
+        adresseTexte: pos.adresse,
+        history: [{ date: new Date().toISOString(), action: "Import BNETD", status: "Réceptionné" }]
       };
-      searchInput.addEventListener("input", renderVehicleList);
-      statusFilter.addEventListener("change", renderVehicleList);
-      document.getElementById("exportExcelBtn").addEventListener("click", exportToExcel);
-      document.getElementById("exportPdfBtn").addEventListener("click", exportToPDF);
-      document.getElementById("backupDataBtn").addEventListener("click", backupData);
-      document.getElementById("restoreDataBtn").addEventListener("click", restoreData);
-      document.getElementById("delaySelect").addEventListener("change", () => { if (document.getElementById("tab-dashboard").style.display === "block") renderDashboard(); });
-      
-      loadVehicles();
+    });
+  }
+  saveVehicles();
+  updateSocieteFilter();
+  renderVehicleList();
+}
 
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(err => console.error('SW error', err));
+function updateSocieteFilter() {
+  const societies = [...new Set(vehicles.map(v => v.societe || v.client || "BNETD"))];
+  const filter = document.getElementById('societeFilter');
+  filter.innerHTML = '<option value="all">Toutes sociétés</option>';
+  societies.forEach(s => {
+    filter.innerHTML += `<option value="${s}">${s}</option>`;
+  });
+  // Si une seule société, la sélectionner par défaut
+  if (societies.length === 1) filter.value = societies[0];
+}
+
+function renderVehicleList() {
+  const filterText = searchInput.value.toLowerCase();
+  const filterStatus = statusFilter.value;
+  const filterSociete = societeFilter.value;
+  let filtered = vehicles.filter(v => {
+    const societe = v.societe || v.client || "BNETD";
+    return (v.plaque.toLowerCase().includes(filterText) || v.client.toLowerCase().includes(filterText) || (v.modele && v.modele.toLowerCase().includes(filterText))) &&
+      (filterStatus === 'all' || v.statut === filterStatus) &&
+      (filterSociete === 'all' || societe === filterSociete);
+  });
+  if (filtered.length===0) { vehiclesListDiv.innerHTML='<div class="placeholder">Aucun véhicule</div>'; return; }
+  vehiclesListDiv.innerHTML = filtered.map(v => {
+    const societe = v.societe || v.client || "BNETD";
+    return `<div class="vehicle-card ${selectedVehicleId===v.id?'selected':''}" data-id="${v.id}">
+      <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)} <span class="badge-societe">${escapeHtml(societe)}</span></h4>
+      <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
+      <span class="status-badge"><i class="fas fa-calendar-alt"></i> ${v.dateCreation?.split(' ')[0] || ''}</span>
+      ${v.photos?.length ? `<span class="status-badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ''}
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.vehicle-card').forEach(card => card.addEventListener('click', () => selectVehicle(card.dataset.id)));
+}
+
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+function selectVehicle(id) { selectedVehicleId=id; const v=vehicles.find(v=>v.id===id); if(v) { renderVehicleList(); showDetailForm(v); } }
+
+function getActiveFields(societe) {
+  const config = getFieldConfig(societe);
+  return ALL_FIELDS.filter(f => config.includes(f.id));
+}
+
+function showDetailForm(v) {
+  placeholderDiv.style.display='none'; detailFormDiv.style.display='block';
+  const societe = v.societe || v.client || "BNETD";
+  const activeFields = getActiveFields(societe);
+  const statusOptions=['Réceptionné','Diagnostic en cours','En attente accord client','Travaux en cours','Prêt pour livraison','Livré'];
+  const photosHtml = (v.photos||[]).map(p=>`<img src="${p}" style="max-width:80px; max-height:80px; border-radius:8px; margin:5px;">`).join('');
+  
+  let accessoriesHtml = '<div class="checkbox-group">';
+  accessoriesList.forEach(acc => {
+    const checked = v.accessoires && v.accessoires.includes(acc) ? 'checked' : '';
+    accessoriesHtml += `<label><input type="checkbox" class="accessoire-check" value="${acc}" ${checked}> ${acc}</label>`;
+  });
+  accessoriesHtml += '</div>';
+  
+  let documentsHtml = '<div class="checkbox-group">';
+  documentsList.forEach(doc => {
+    const checked = v.documents && v.documents.includes(doc) ? 'checked' : '';
+    documentsHtml += `<label><input type="checkbox" class="document-check" value="${doc}" ${checked}> ${doc}</label>`;
+  });
+  documentsHtml += '</div>';
+
+  // Construction dynamique du formulaire
+  let formHtml = `<h2>${escapeHtml(v.plaque)} - ${escapeHtml(v.client)} <span class="badge-societe">${escapeHtml(societe)}</span></h2>`;
+  
+  // Champs actifs
+  const fieldMap = {
+    societe: `<div class="form-group"><label>Société *</label><input type="text" id="detailSociete" value="${escapeHtml(societe)}" required></div>`,
+    client: `<div class="form-group"><label>Client *</label><input type="text" id="detailClient" value="${escapeHtml(v.client)}" required></div>`,
+    plaque: `<div class="form-group"><label>Immatriculation *</label><input type="text" id="detailPlaque" value="${escapeHtml(v.plaque)}" required></div>`,
+    marque: `<div class="form-group"><label>Marque</label><input type="text" id="detailMarque" value="${escapeHtml(v.marque)}"></div>`,
+    modele: `<div class="form-group"><label>Modèle</label><input type="text" id="detailModele" value="${escapeHtml(v.modele)}"></div>`,
+    statut: `<div class="form-group"><label>Statut</label><select id="detailStatus">${statusOptions.map(s=>`<option ${v.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>`,
+    dateCreation: `<div class="form-group"><label>Date création</label><input type="datetime-local" id="detailDateCreation" value="${v.dateCreation?.replace(' ','T')||''}"></div>`,
+    dateLivraison: `<div class="form-group"><label>Date livraison</label><input type="datetime-local" id="detailDateLivraison" value="${v.dateLivraison?.replace(' ','T')||''}"></div>`,
+    kilometrage: `<div class="form-group"><label>Kilométrage</label><input type="number" id="detailKilometrage" value="${v.kilometrage||''}"></div>`,
+    chassis: `<div class="form-group"><label>N° Châssis</label><input type="text" id="detailChassis" value="${escapeHtml(v.chassis||'')}"></div>`,
+    energie: `<div class="form-group"><label>Énergie</label><select id="detailEnergie"><option ${v.energie==='Essence'?'selected':''}>Essence</option><option ${v.energie==='Diesel'?'selected':''}>Diesel</option><option ${v.energie==='Électrique'?'selected':''}>Électrique</option><option ${v.energie==='Hybride'?'selected':''}>Hybride</option></select></div>`,
+    niveauCarburant: `<div class="form-group"><label>Niveau carburant</label><select id="detailNiveauCarburant"><option ${v.niveauCarburant==='Vide'?'selected':''}>Vide</option><option ${v.niveauCarburant==='1/4'?'selected':''}>1/4</option><option ${v.niveauCarburant==='1/2'?'selected':''}>1/2</option><option ${v.niveauCarburant==='3/4'?'selected':''}>3/4</option><option ${v.niveauCarburant==='Plein'?'selected':''}>Plein</option></select></div>`,
+    miseEnService: `<div class="form-group"><label>Mise en service</label><input type="date" id="detailMiseEnService" value="${v.miseEnService||''}"></div>`,
+    proprietaireNom: `<div class="form-group"><label>Nom propriétaire</label><input type="text" id="detailProprietaireNom" value="${escapeHtml(v.proprietaireNom||'')}"></div>`,
+    proprietaireContact: `<div class="form-group"><label>Contact propriétaire</label><input type="tel" id="detailProprietaireContact" value="${escapeHtml(v.proprietaireContact||'')}"></div>`,
+    chauffeurNom: `<div class="form-group"><label>Chauffeur déposant</label><input type="text" id="detailChauffeurNom" value="${escapeHtml(v.chauffeurNom||'')}"></div>`,
+    chauffeurContact: `<div class="form-group"><label>Contact chauffeur</label><input type="tel" id="detailChauffeurContact" value="${escapeHtml(v.chauffeurContact||'')}"></div>`,
+    transmission: `<div class="form-group"><label>Transmission</label><select id="detailTransmission"><option ${v.transmission==='Manuelle'?'selected':''}>Manuelle</option><option ${v.transmission==='Automatique'?'selected':''}>Automatique</option></select></div>`,
+    couleur: `<div class="form-group"><label>Couleur</label><input type="text" id="detailCouleur" value="${escapeHtml(v.couleur||'')}"></div>`,
+    puissance: `<div class="form-group"><label>Puissance (ch)</label><input type="text" id="detailPuissance" value="${escapeHtml(v.puissance||'')}"></div>`,
+    finAssurance: `<div class="form-group"><label>Fin assurance</label><input type="date" id="detailFinAssurance" value="${v.finAssurance||''}"></div>`,
+    finVignette: `<div class="form-group"><label>Fin vignette</label><input type="date" id="detailFinVignette" value="${v.finVignette||''}"></div>`,
+    numeroIntervention: `<div class="form-group"><label>Numéro d'intervention</label><input type="text" id="detailNumeroIntervention" value="${escapeHtml(v.numeroIntervention||'')}"></div>`,
+    travauxClient: `<div class="form-group"><label>Pannes signalées</label><textarea id="detailPannes" rows="2">${escapeHtml(v.travauxClient||'')}</textarea></div>`,
+    rapportDiagnostic: `<div class="form-group"><label>Rapport diagnostic</label><textarea id="detailRapport" rows="2">${escapeHtml(v.rapportDiagnostic||'')}</textarea></div>`,
+    pieces: `<div class="form-group"><label>Pièces à remplacer</label><textarea id="detailPieces" rows="2">${escapeHtml(v.pieces||'')}</textarea></div>`,
+    observations: `<div class="form-group"><label>Observations</label><textarea id="detailObservations" rows="2">${escapeHtml(v.observations||'')}</textarea></div>`,
+    accessoires: `<div class="form-group"><label>Accessoires de bord</label>${accessoriesHtml}</div>`,
+    documents: `<div class="form-group"><label>Documents fournis</label>${documentsHtml}</div>`,
+    positionGeo: `<div class="form-group"><label>Position géographique</label><input type="text" id="detailPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>`,
+    photos: `<div class="form-group"><label>Photos réception</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>`
+  };
+
+  // Construction du formulaire en respectant l'ordre des champs
+  let fieldsToShow = activeFields.map(f => f.id);
+  // Ajouter les champs manquants qui sont requis mais pas dans la config (sécurité)
+  ALL_FIELDS.forEach(f => {
+    if (f.required && !fieldsToShow.includes(f.id)) fieldsToShow.push(f.id);
+  });
+  
+  // Grouper les champs par paires pour les form-row
+  let rows = [];
+  let currentRow = [];
+  fieldsToShow.forEach(id => {
+    if (fieldMap[id]) {
+      currentRow.push(fieldMap[id]);
+      if (currentRow.length === 2) {
+        rows.push(`<div class="form-row">${currentRow.join('')}</div>`);
+        currentRow = [];
       }
-    </script>
-  </body>
+    }
+  });
+  if (currentRow.length > 0) {
+    rows.push(`<div class="form-row">${currentRow.join('')}</div>`);
+  }
+  
+  formHtml += rows.join('');
+  formHtml += `<div class="action-buttons"><button id="deleteVehicleBtn" class="btn-danger">Supprimer</button><button id="saveDetailBtn" class="btn-primary">Enregistrer</button></div>`;
+  
+  detailFormDiv.innerHTML = formHtml;
+  setTimeout(()=>initMap(v.position),100);
+  document.getElementById('saveDetailBtn').addEventListener('click',()=>saveVehicleDetails(v.id));
+  document.getElementById('deleteVehicleBtn').addEventListener('click',()=>deleteVehicle(v.id));
+  document.getElementById('getCurrentPosBtn')?.addEventListener('click',()=>getCurrentLocationForVehicle(v.id));
+  const up=document.getElementById('photoUpload'); if(up) up.addEventListener('change',(e)=>handlePhotoUpload(v.id,e.target.files));
+}
+
+function handlePhotoUpload(id,files) { const v=vehicles.find(v=>v.id===id); if(v){ Array.from(files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{ v.photos.push(e.target.result); saveVehicles(); const pv=document.getElementById('photoPreview'); if(pv){ let img=document.createElement('img'); img.src=e.target.result; img.style.maxWidth='80px'; pv.appendChild(img); } }; r.readAsDataURL(f); }); } }
+
+function initMap(pos) { if(map) map.remove(); const lat=pos?.lat||DEFAULT_POSITION.lat, lng=pos?.lng||DEFAULT_POSITION.lng; map=L.map('mapContainer').setView([lat,lng],DEFAULT_ZOOM); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map); if(marker) marker.remove(); marker=L.marker([lat,lng],{draggable:true}).addTo(map); marker.on('dragend',()=>updateVehiclePosition(selectedVehicleId,marker.getLatLng())); }
+
+function updateVehiclePosition(id,coords) { const v=vehicles.find(v=>v.id===id); if(v){ v.position={lat:coords.lat,lng:coords.lng}; saveVehicles(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18`).then(r=>r.json()).then(d=>{ if(d.display_name){ v.adresseTexte=d.display_name.substring(0,100); saveVehicles(); } }).catch(()=>{}); } }
+
+function getCurrentLocationForVehicle(id){ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{ const coords={lat:p.coords.latitude,lng:p.coords.longitude}; updateVehiclePosition(id,coords); if(marker) marker.setLatLng(coords); if(map) map.setView([coords.lat,coords.lng],DEFAULT_ZOOM); },()=>alert("Géolocalisation refusée")); else alert("Non supporté"); }
+
+function saveVehicleDetails(id){
+  const v=vehicles.find(v=>v.id===id); if(!v) return;
+  const societe = document.getElementById('detailSociete')?.value || v.societe || "BNETD";
+  v.societe = societe;
+  v.client = document.getElementById('detailClient')?.value || societe;
+  v.statut = document.getElementById('detailStatus')?.value || v.statut;
+  v.dateCreation = document.getElementById('detailDateCreation')?.value?.replace('T',' ') || v.dateCreation;
+  v.dateLivraison = document.getElementById('detailDateLivraison')?.value?.replace('T',' ') || v.dateLivraison;
+  v.plaque = document.getElementById('detailPlaque')?.value || v.plaque;
+  v.marque = document.getElementById('detailMarque')?.value || v.marque;
+  v.modele = document.getElementById('detailModele')?.value || v.modele;
+  v.kilometrage = document.getElementById('detailKilometrage')?.value || v.kilometrage;
+  v.chassis = document.getElementById('detailChassis')?.value || v.chassis;
+  v.energie = document.getElementById('detailEnergie')?.value || v.energie;
+  v.niveauCarburant = document.getElementById('detailNiveauCarburant')?.value || v.niveauCarburant;
+  v.miseEnService = document.getElementById('detailMiseEnService')?.value || v.miseEnService;
+  v.transmission = document.getElementById('detailTransmission')?.value || v.transmission;
+  v.couleur = document.getElementById('detailCouleur')?.value || v.couleur;
+  v.puissance = document.getElementById('detailPuissance')?.value || v.puissance;
+  v.proprietaireNom = document.getElementById('detailProprietaireNom')?.value || v.proprietaireNom;
+  v.proprietaireContact = document.getElementById('detailProprietaireContact')?.value || v.proprietaireContact;
+  v.chauffeurNom = document.getElementById('detailChauffeurNom')?.value || v.chauffeurNom;
+  v.chauffeurContact = document.getElementById('detailChauffeurContact')?.value || v.chauffeurContact;
+  v.finAssurance = document.getElementById('detailFinAssurance')?.value || v.finAssurance;
+  v.finVignette = document.getElementById('detailFinVignette')?.value || v.finVignette;
+  v.numeroIntervention = document.getElementById('detailNumeroIntervention')?.value || v.numeroIntervention;
+  v.travauxClient = document.getElementById('detailPannes')?.value || v.travauxClient;
+  v.rapportDiagnostic = document.getElementById('detailRapport')?.value || v.rapportDiagnostic;
+  v.pieces = document.getElementById('detailPieces')?.value || v.pieces;
+  v.observations = document.getElementById('detailObservations')?.value || v.observations;
+  v.positionGeo = document.getElementById('detailPositionGeo')?.value || v.positionGeo;
+  v.accessoires = Array.from(document.querySelectorAll('.accessoire-check:checked')).map(cb => cb.value);
+  v.documents = Array.from(document.querySelectorAll('.document-check:checked')).map(cb => cb.value);
+  saveVehicles(); updateSocieteFilter(); renderVehicleList(); alert("Enregistré");
+}
+
+function deleteVehicle(id){ if(confirm("Supprimer définitivement ?")){ vehicles=vehicles.filter(v=>v.id!==id); if(selectedVehicleId===id){ selectedVehicleId=null; detailFormDiv.style.display='none'; placeholderDiv.style.display='block'; } saveVehicles(); renderVehicleList(); } }
+
+function addVehicle(plaque, client, modele){
+  const societe = client;
+  const newVehicle = getEmptyVehicle(plaque, client, modele, societe);
+  vehicles.push(newVehicle);
+  saveVehicles(); updateSocieteFilter(); renderVehicleList(); selectVehicle(newVehicle.id);
+}
+
+// ========== EXPORT EXCEL : uniquement les colonnes originales ==========
+function exportToExcel(){
+  const data = vehicles.map((v,idx) => ({
+    "NB": idx+1,
+    "CLIENT": v.client,
+    "Date de création": v.dateCreation || "",
+    "Date de Livraison": v.dateLivraison || "",
+    "Immatriculation": v.plaque,
+    "Marque": v.marque,
+    "Modèle": v.modele,
+    "PANNES SIGNALEES": v.travauxClient || "",
+    "RAPPORT DIAGNOSTIC": v.rapportDiagnostic || "",
+    "PIECES ET ELEMENTS A REMPLACER": v.pieces || "",
+    "STATUT": v.statut,
+    "POSITION GEO": v.positionGeo || ""
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Suivi BNETD");
+  XLSX.writeFile(wb, `NTR_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ========== EXPORT PDF : amélioré ==========
+function exportToPDF(){
+  const element = document.createElement('div');
+  element.style.padding = '15px';
+  element.style.fontFamily = 'Arial, sans-serif';
+  element.style.backgroundColor = 'white';
+  
+  let html = `
+    <div class="pdf-header">
+      <h2>SUIVI DES VÉHICULES - GESTION SAV</h2>
+      <p>Export généré le ${new Date().toLocaleString()}</p>
+      <p>Nombre de véhicules : ${vehicles.length}</p>
+    </div>
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th style="width:3%">NB</th><th style="width:8%">CLIENT</th><th style="width:8%">Date création</th><th style="width:8%">Date livraison</th>
+          <th style="width:8%">Immatriculation</th><th style="width:7%">Marque</th><th style="width:7%">Modèle</th>
+          <th style="width:12%">PANNES SIGNALEES</th><th style="width:12%">RAPPORT DIAGNOSTIC</th>
+          <th style="width:12%">PIECES A REMPLACER</th><th style="width:6%">STATUT</th><th style="width:5%">POSITION GEO</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  vehicles.forEach((v, idx) => {
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td>${escapeHtml(v.client)}</td>
+      <td>${v.dateCreation || ''}</td>
+      <td>${v.dateLivraison || ''}</td>
+      <td>${escapeHtml(v.plaque)}</td>
+      <td>${escapeHtml(v.marque)}</td>
+      <td>${escapeHtml(v.modele)}</td>
+      <td>${escapeHtml(v.travauxClient || '').substring(0, 120)}</td>
+      <td>${escapeHtml(v.rapportDiagnostic || '').substring(0, 120)}</td>
+      <td>${escapeHtml(v.pieces || '').substring(0, 120)}</td>
+      <td>${v.statut}</td>
+      <td>${escapeHtml(v.positionGeo || '')}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table>`;
+  element.innerHTML = html;
+  document.body.appendChild(element);
+  
+  const opt = {
+    margin:        [0.4, 0.4, 0.4, 0.4],
+    filename:     `NTR_export_${new Date().toISOString().slice(0,10)}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, letterRendering: true },
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+  };
+  
+  html2pdf().from(element).set(opt).save().then(() => element.remove());
+}
+
+// ========== IMPORT EXCEL ==========
+let importData = null;
+
+function openImportModal() {
+  document.getElementById('importModal').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('importMapping').style.display = 'none';
+  document.getElementById('importStatus').innerHTML = '';
+  importData = null;
+}
+
+function handleFileUpload(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      if (jsonData.length === 0) {
+        document.getElementById('importStatus').innerHTML = '<p style="color:red;">Le fichier est vide.</p>';
+        return;
+      }
+      importData = jsonData;
+      const headers = Object.keys(jsonData[0]);
+      const mappingDiv = document.getElementById('mappingFields');
+      mappingDiv.innerHTML = '';
+      
+      // Champs disponibles pour le mapping
+      const availableFields = ['plaque', 'client', 'marque', 'modele', 'travauxClient', 'rapportDiagnostic', 'pieces', 'positionGeo', 'dateCreation', 'dateLivraison', 'statut'];
+      
+      availableFields.forEach(field => {
+        const label = field === 'travauxClient' ? 'Pannes signalées' :
+                      field === 'rapportDiagnostic' ? 'Rapport diagnostic' :
+                      field === 'pieces' ? 'Pièces à remplacer' :
+                      field === 'dateCreation' ? 'Date création' :
+                      field === 'dateLivraison' ? 'Date livraison' :
+                      field.charAt(0).toUpperCase() + field.slice(1);
+        const div = document.createElement('div');
+        div.innerHTML = `<label style="font-weight:bold;">${label}</label>
+          <select class="mapping-select" data-field="${field}">
+            <option value="">-- Ignorer --</option>
+            ${headers.map(h => `<option value="${h}">${h}</option>`).join('')}
+          </select>`;
+        mappingDiv.appendChild(div);
+      });
+      
+      document.getElementById('importMapping').style.display = 'block';
+      document.getElementById('importStatus').innerHTML = `<p style="color:green;">${jsonData.length} lignes détectées. Mappez les colonnes.</p>`;
+    } catch(err) {
+      document.getElementById('importStatus').innerHTML = `<p style="color:red;">Erreur de lecture du fichier: ${err.message}</p>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function confirmImport() {
+  if (!importData) return;
+  const mapping = {};
+  document.querySelectorAll('.mapping-select').forEach(sel => {
+    const field = sel.dataset.field;
+    const value = sel.value;
+    if (value) mapping[field] = value;
+  });
+  
+  // Vérifier que les champs obligatoires sont mappés
+  if (!mapping.plaque || !mapping.client) {
+    document.getElementById('importStatus').innerHTML = '<p style="color:red;">Les champs "plaque" et "client" sont obligatoires.</p>';
+    return;
+  }
+  
+  let imported = 0;
+  importData.forEach(row => {
+    const plaque = row[mapping.plaque]?.toString().trim() || '';
+    const client = row[mapping.client]?.toString().trim() || 'BNETD';
+    if (!plaque) return;
+    
+    const newV = getEmptyVehicle(plaque, client, '', client);
+    if (mapping.marque) newV.marque = row[mapping.marque]?.toString().trim() || '';
+    if (mapping.modele) newV.modele = row[mapping.modele]?.toString().trim() || '';
+    if (mapping.travauxClient) newV.travauxClient = row[mapping.travauxClient]?.toString().trim() || '';
+    if (mapping.rapportDiagnostic) newV.rapportDiagnostic = row[mapping.rapportDiagnostic]?.toString().trim() || '';
+    if (mapping.pieces) newV.pieces = row[mapping.pieces]?.toString().trim() || '';
+    if (mapping.positionGeo) newV.positionGeo = row[mapping.positionGeo]?.toString().trim() || '';
+    if (mapping.dateCreation) newV.dateCreation = row[mapping.dateCreation]?.toString().trim() || new Date().toISOString().slice(0,19).replace('T',' ');
+    if (mapping.dateLivraison) newV.dateLivraison = row[mapping.dateLivraison]?.toString().trim() || '';
+    if (mapping.statut) newV.statut = row[mapping.statut]?.toString().trim() || 'Réceptionné';
+    
+    // Si la position géo est renseignée, essayer de récupérer les coordonnées
+    if (newV.positionGeo) {
+      const coords = getCoordFromPositionGeo(newV.positionGeo);
+      newV.position = coords;
+      newV.adresseTexte = coords.adresse;
+    }
+    
+    vehicles.push(newV);
+    imported++;
+  });
+  
+  saveVehicles();
+  updateSocieteFilter();
+  renderVehicleList();
+  document.getElementById('importStatus').innerHTML = `<p style="color:green;">${imported} véhicules importés avec succès.</p>`;
+  document.getElementById('importModal').style.display = 'none';
+}
+
+// ========== CONFIGURATION ==========
+let configSociete = 'BNETD';
+
+function openConfigModal() {
+  const currentSociete = societeFilter.value !== 'all' ? societeFilter.value : (vehicles.length > 0 ? (vehicles[0].societe || vehicles[0].client || "BNETD") : "BNETD");
+  configSociete = currentSociete;
+  document.getElementById('configSocieteName').textContent = currentSociete;
+  const config = getFieldConfig(currentSociete);
+  const container = document.getElementById('configFieldsContainer');
+  container.innerHTML = '';
+  ALL_FIELDS.forEach(f => {
+    const checked = config.includes(f.id) ? 'checked' : '';
+    const required = f.required ? '<span class="field-required">*</span>' : '';
+    container.innerHTML += `
+      <label>
+        <input type="checkbox" class="config-check" value="${f.id}" ${checked} ${f.required ? 'disabled checked' : ''}>
+        ${f.label} ${required}
+      </label>
+    `;
+  });
+  document.getElementById('configModal').style.display = 'block';
+}
+
+function saveConfig() {
+  const selected = [];
+  document.querySelectorAll('.config-check:checked').forEach(cb => {
+    if (!cb.disabled) selected.push(cb.value);
+  });
+  // Ajouter les champs obligatoires
+  ALL_FIELDS.forEach(f => {
+    if (f.required && !selected.includes(f.id)) selected.push(f.id);
+  });
+  saveFieldConfig(configSociete, selected);
+  document.getElementById('configModal').style.display = 'none';
+  // Rafraîchir le formulaire si un véhicule est sélectionné
+  if (selectedVehicleId) {
+    const v = vehicles.find(v => v.id === selectedVehicleId);
+    if (v) showDetailForm(v);
+  }
+  alert('Configuration enregistrée pour ' + configSociete);
+}
+
+// ========== SAUVEGARDE / RESTAURATION ==========
+function backupData(){
+  const dataStr = JSON.stringify(vehicles, null, 2);
+  const blob = new Blob([dataStr], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sauvegarde_NTR_${new Date().toISOString().slice(0,19)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreData(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const restored = JSON.parse(ev.target.result);
+        if (!Array.isArray(restored)) throw new Error();
+        const migrated = restored.map(v => ({
+          ...getEmptyVehicle(v.plaque || "", v.client || "", v.modele || "", v.societe || v.client || "BNETD"),
+          ...v,
+          accessoires: v.accessoires || [],
+          documents: v.documents || [],
+          photos: v.photos || [],
+          history: v.history || []
+        }));
+        vehicles = migrated;
+        saveVehicles();
+        updateSocieteFilter();
+        renderVehicleList();
+        alert("Restauration réussie !");
+      } catch(err) {
+        alert("Fichier invalide. Vérifiez le format.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ========== TABLEAU DE BORD ==========
+function renderDashboard(){
+  const statsDiv=document.getElementById('statsContainer');
+  const total=vehicles.length;
+  const statusCount={}; vehicles.forEach(v=>{statusCount[v.statut]=(statusCount[v.statut]||0)+1;});
+  const societies = [...new Set(vehicles.map(v => v.societe || v.client || "BNETD"))];
+  statsDiv.innerHTML=`<div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total véhicules</div></div>
+    <div class="stat-card"><div class="stat-number">${societies.length}</div><div class="stat-label">Sociétés</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Réceptionné']||0}</div><div class="stat-label">Réceptionné</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Diagnostic en cours']||0}</div><div class="stat-label">Diagnostic</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['En attente accord client']||0}</div><div class="stat-label">Attente accord</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Travaux en cours']||0}</div><div class="stat-label">Travaux</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Prêt pour livraison']||0}</div><div class="stat-label">Prêt livraison</div></div>
+    <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>`;
+  const pending = vehicles.filter(v => v.statut !== 'Livré' && (!v.dateLivraison || v.dateLivraison === ''));
+  document.getElementById('pendingAccordContainer').innerHTML = `<div class="stat-card" style="grid-column: span 2;"><div class="stat-label">🚚 Non livrés (${pending.length})</div><div class="pending-list"><ul>${pending.map(v=>`<li>${v.plaque} - ${v.client} (${v.statut})</li>`).join('')}</ul></div></div>`;
+  document.getElementById('chartContainer').innerHTML = `<h3>Répartition par statut</h3><div style="display:flex; gap:10px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v])=>`<div style="background:#ff9800; padding:5px 10px; border-radius:20px;">${k} (${v})</div>`).join('')}</div>`;
+}
+
+// ========== GESTION DES ÉVÉNEMENTS ==========
+document.addEventListener('DOMContentLoaded', () => {
+  // Éléments DOM
+  const vehiclesListDiv = document.getElementById('vehiclesList');
+  const detailFormDiv = document.getElementById('vehicleDetailForm');
+  const placeholderDiv = document.getElementById('detailPlaceholder');
+  const addModal = document.getElementById('addModal');
+  const searchInput = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
+  const societeFilter = document.getElementById('societeFilter');
+  
+  // Onglets
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.tab==='list'){ document.getElementById('tab-list').style.display='flex'; document.getElementById('tab-dashboard').style.display='none'; renderVehicleList(); }
+    else{ document.getElementById('tab-list').style.display='none'; document.getElementById('tab-dashboard').style.display='block'; renderDashboard(); }
+  }));
+  
+  // Boutons
+  document.getElementById('addVehicleBtn').onclick=()=>addModal.style.display='block';
+  document.querySelectorAll('.modal .close').forEach(el => el.onclick=() => el.closest('.modal').style.display='none');
+  window.onclick=e=>{ if(e.target.classList.contains('modal')) e.target.style.display='none'; };
+  document.getElementById('quickAddForm').onsubmit=e=>{ e.preventDefault(); const plaque=document.getElementById('newPlaque').value.trim(); const client=document.getElementById('newClient').value.trim(); const modele=document.getElementById('newModel').value.trim(); if(!plaque||!client) return alert("Plaque et client requis"); addVehicle(plaque,client,modele); addModal.style.display='none'; document.getElementById('quickAddForm').reset(); };
+  searchInput.addEventListener('input',renderVehicleList);
+  statusFilter.addEventListener('change',renderVehicleList);
+  societeFilter.addEventListener('change',renderVehicleList);
+  document.getElementById('exportExcelBtn').addEventListener('click',exportToExcel);
+  document.getElementById('exportPdfBtn').addEventListener('click',exportToPDF);
+  document.getElementById('backupDataBtn').addEventListener('click',backupData);
+  document.getElementById('restoreDataBtn').addEventListener('click',restoreData);
+  document.getElementById('importExcelBtn').addEventListener('click',openImportModal);
+  document.getElementById('importClose').addEventListener('click',()=>document.getElementById('importModal').style.display='none');
+  document.getElementById('fileInput').addEventListener('change',(e)=>handleFileUpload(e.target.files[0]));
+  document.getElementById('confirmImportBtn').addEventListener('click',confirmImport);
+  document.getElementById('configBtn').addEventListener('click',openConfigModal);
+  document.getElementById('configClose').addEventListener('click',()=>document.getElementById('configModal').style.display='none');
+  document.getElementById('saveConfigBtn').addEventListener('click',saveConfig);
+  
+  // Chargement initial
+  loadVehicles();
+});
+</script>
+</body>
 </html>
