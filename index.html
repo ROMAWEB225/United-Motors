@@ -127,59 +127,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - VERSION FINALE AVEC IMPORT COMPLET   *
+ *  SAV FLEET MANAGER - IMPORT COMPLET (sans données par défaut)
  ************************************************************/
-
-// ---------- DONNÉES EXEMPLES BNETD (47) ----------
-const BNETD_DATA = [
-  { nb:1, dateCreation:"2026-05-06 09:08:52", immat:"853LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:2, dateCreation:"2026-05-05 10:24:40", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:3, dateCreation:"2026-04-28 16:58:50", immat:"3235KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
-  { nb:4, dateCreation:"2026-04-28 14:50:06", immat:"41LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"BRUIT ANORMAL DANS LE MOTEUR - AFFICHAGE SUR TABLEAU DE BORD - PRESENCE D'EAU DANS LE CARBURANT - PERTE DE PUISSANCE - CLIM DEFAILLANTE", rapport:"BRUIT DE BIELLE - CRAQUEMENT AU NIVEAU DES INJECTEURS - PERTE DE  PUISSANCE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
-  { nb:5, dateCreation:"2026-04-28 14:40:37", immat:"AA969LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"VEHICULE REMORQUE -REMPLACEMENT DE MOTEUR", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
-  { nb:6, dateCreation:"2026-04-25 12:32:17", immat:"AA829VZ", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:7, dateCreation:"2026-04-25 12:27:33", immat:"AA677EY", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:8, dateCreation:"2026-04-25 12:22:43", immat:"855LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:9, dateCreation:"2026-04-25 12:19:04", immat:"2458KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:10, dateCreation:"2026-04-25 10:46:39", immat:"38LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:11, dateCreation:"2026-04-25 09:17:09", immat:"2502KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:12, dateCreation:"2026-04-24 08:40:03", immat:"AA601AF", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE DE CARBURANT AU NIVEAU DES INJECTEURS", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT AEROPORT" },
-  { nb:13, dateCreation:"2026-04-23 13:43:35", immat:"5897HF01", marque:"TOYOTA", modele:"HILUX", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT 1" },
-  { nb:14, dateCreation:"2026-04-23 13:21:34", immat:"6763JE01", marque:"MITSUBISHI", modele:"L200", pannes:"FORTE CHALEUR AU NIVEAU DES PEDALES - FUITE D'HUILE DE MOTEUR - REGIME MOTEUR INSTABLE - ABSCE DE FERMETURE DU BOCAL D'HUILE DE FREIN - BIEN FIXE LE BOCAL DE FILTRE A AIR - VOYANT ALLUME SUR LE TABLEAU DE BORD", rapport:"MOTEUR SANS PUISSANCE - TURBO DEFECTUEUX - BOCAL D'HUILE DE FREIN A REMPLACER - BOCAL DU FILTRE A AIR A FIXER", pieces:"MOTEUR + TURBO + BOCAL D'HUILE DE FREIN + BOCAL DE FILTRE A AIR", positionGeo:"DEPOT 2" },
-  { nb:15, dateCreation:"2026-04-23 13:12:31", immat:"58LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DEMARRAGE DIFFICILE - VOYANT MOTEUR ALLUME - PERTE DE PUISSANCE", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBOS", positionGeo:"DEPOT 2" },
-  { nb:16, dateCreation:"2026-04-21 17:14:21", immat:"64LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"DEPOT AEROPORT" },
-  { nb:17, dateCreation:"2026-04-21 14:36:31", immat:"221LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:18, dateCreation:"2026-04-20 14:39:31", immat:"2296KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:19, dateCreation:"2026-04-16 15:53:20", immat:"AA153PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:20, dateCreation:"2026-04-16 12:36:47", immat:"2309KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:21, dateCreation:"2026-04-07 15:08:33", immat:"AA248SX", marque:"MITSUBISHI", modele:"L200", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:22, dateCreation:"2026-04-07 12:40:54", immat:"7887JT01", marque:"BMW", modele:"520I", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:23, dateCreation:"2026-04-02 16:52:19", immat:"AA223LR", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:24, dateCreation:"2026-04-02 16:46:01", immat:"AA285AL", marque:"FORD", modele:"Territory", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:25, dateCreation:"2026-04-01 16:57:21", immat:"2303KA01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:26, dateCreation:"2026-04-01 16:53:25", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:27, dateCreation:"2026-04-01 11:47:26", immat:"2910KB01", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:28, dateCreation:"2026-04-01 09:11:21", immat:"94LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:29, dateCreation:"2026-03-31 12:49:13", immat:"AA175PG", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:30, dateCreation:"2026-03-30 08:51:15", immat:"1922LZ01", marque:"CHANGAN", modele:"HUNTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:31, dateCreation:"2026-03-27 16:28:36", immat:"AA986PF", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:32, dateCreation:"2026-03-27 16:22:04", immat:"AA678BX", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:33, dateCreation:"2026-03-27 12:31:21", immat:"260LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE - PERTE DE PUISSANCE - PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - JEU AU NIVEAU DE LA TURBINE - INJECTEUR DEFECTUEUX", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT AEROPORT" },
-  { nb:34, dateCreation:"2026-03-26 16:40:27", immat:"2462KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC - PROBLEME DE DEMARRAGE", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - INJECTEUR BLOQUE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
-  { nb:35, dateCreation:"2026-03-26 15:44:57", immat:"2503KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"FUITE D'HUILE MOTEUR CACHE CULBITEUR+ FUITE AU NIVEAU DU TURBO + CIRCUIT D'ALIMENTATION + FUITE CACHE DE DISTRIBUTION", rapport:"SOUPAPE DEFORMEE - JEU AU NIVEAU DE LA TURBINE - FUMEE ANORMALE", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"DEPOT 2" },
-  { nb:36, dateCreation:"2026-03-25 17:12:37", immat:"862LY01", marque:"CHANGAN", modele:"HUNTER", pannes:"PANNE MOTEUR", rapport:"MANQUE DE PUISSANCE - FUMEE NOIRE", pieces:"MOTEUR + INJECTEURS + TURBO + ELEMENTS FILTRANTS", positionGeo:"DEPOT 2" },
-  { nb:37, dateCreation:"2026-03-25 17:09:33", immat:"75LL01", marque:"DONGFENG", modele:"RICH6-ZNA", pannes:"DIAGNOSTIC", rapport:"MANQUE DE PUISSANCE - INJECTEUR NE PISSE PAS", pieces:"MOTEUR + INJECTEURS + TURBO +  COURROIE DE DISTRIBUTION + COURROIE D'ALTERNATEUR + TENDEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
-  { nb:38, dateCreation:"2026-03-25 15:08:06", immat:"56LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"DIAGNOSTIC", rapport:"MOTEUR SANS PRESSION - TURBO DEFECTUEUX - COURROIE D'ALTERNATEUR DEFECTUEUX", pieces:"MOTEUR + INJECTEURS + TURBO + COURROIE D'ALTERNATEUR + ELEMENTS FILTRANTS", positionGeo:"DEPOT AEROPORT" },
-  { nb:39, dateCreation:"2026-03-25 09:19:26", immat:"AA445CA", marque:"CHANGAN", modele:"CS 15", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:40, dateCreation:"2026-03-25 09:15:34", immat:"AA150CB", marque:"MG", modele:"T60", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:41, dateCreation:"2026-03-25 09:09:19", immat:"212JJ01", marque:"RENAULT", modele:"LOGAN", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:42, dateCreation:"2026-03-25 09:04:39", immat:"1207JP01", marque:"RENAULT", modele:"DUSTER", pannes:"", rapport:"", pieces:"", positionGeo:"" },
-  { nb:43, dateCreation:"2026-05-12 09:04:39", immat:"AA933VZ", marque:"DONGFENG", modele:"RICH6 ZNA", pannes:"", rapport:"", pieces:"", positionGeo:"UNITED MOTORS" },
-  { nb:44, dateCreation:"2026-05-13 00:00:00", immat:"63LA01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"ABSENCE DU GROUPE MOTOPROPULSEUR DANS LE COMPATIMENT MOTEUR", pieces:"MOTEUR +  INJECTEURS + TURBO + KIT DE JOINT", positionGeo:"" },
-  { nb:45, dateCreation:"2026-05-19 00:00:00", immat:"2467KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR", pieces:"MOTEUR + TURBO", positionGeo:"GARAGE 2" },
-  { nb:46, dateCreation:"2026-05-20 00:00:00", immat:"2667KL01", marque:"CHANGAN", modele:"HUNTER", pannes:"VEHICULE REMORQUE", rapport:"PANNE MOTEUR - VISTE TECHNIQUE", pieces:"", positionGeo:"DEPOT 1" },
-  { nb:47, dateCreation:"2026-06-01 00:00:00", immat:"AA609VE", marque:"MITSUBISHI", modele:"L200", pannes:"PROBLEME DE DEMARRAGE-VEHICULE REMORQUE", rapport:"", pieces:"", positionGeo:"GARAGE 2" }
-];
 
 // ---------- CONFIG ----------
 const DEFAULT_POS = { lat:5.3364, lng:-4.0267 };
@@ -221,15 +170,12 @@ function today() { return new Date().toISOString().slice(0,19).replace('T',' ');
 
 function parseDate(val) {
   if (!val) return '';
-  // si c'est un nombre Excel (ex: 45000)
   if (typeof val === 'number' && val > 1000) {
     const d = new Date((val - 25569) * 86400 * 1000);
     return d.toISOString().slice(0,19).replace('T',' ');
   }
   const str = String(val).trim();
-  // format YYYY-MM-DD ou YYYY-MM-DD HH:mm:ss
   if (str.match(/^\d{4}-\d{2}-\d{2}/)) return str;
-  // format DD/MM/YYYY
   if (str.match(/^\d{2}\/\d{2}\/\d{4}/)) {
     const parts = str.split(/[\/\s]/);
     if (parts.length >= 3) return `${parts[2]}-${parts[1]}-${parts[0]} 00:00:00`;
@@ -295,26 +241,6 @@ function loadFromStorage() {
     } catch(e) {}
   }
   return false;
-}
-
-function initDefaultData() {
-  vehicles = BNETD_DATA.map((row, idx) => {
-    const pos = getCoordFromPosGeo(row.positionGeo);
-    const v = newVehicle(row.immat, "BNETD", `${row.marque} ${row.modele}`);
-    v.id = `bnetd_${idx}`;
-    v.dateCreation = row.dateCreation;
-    v.marque = row.marque;
-    v.modele = row.modele;
-    v.travauxClient = row.pannes;
-    v.rapportDiagnostic = row.rapport;
-    v.pieces = row.pieces;
-    v.positionGeo = row.positionGeo;
-    v.position = pos;
-    v.adresseTexte = pos.adresse || "Abidjan";
-    v.history = [{ date: today(), action: "Import BNETD", status: "Réceptionné" }];
-    return v;
-  });
-  save();
 }
 
 // ---------- RENDU LISTE ----------
@@ -634,10 +560,10 @@ function importExcel(file) {
       const get = (row, keys) => {
         for (let k of keys) {
           // Recherche exacte
-          if (row[k] !== undefined) return row[k];
+          if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
           // Recherche insensible à la casse
           const found = Object.keys(row).find(col => col.toLowerCase().trim() === k.toLowerCase().trim());
-          if (found) return row[found];
+          if (found && row[found] !== undefined && row[found] !== null && row[found] !== '') return row[found];
         }
         return '';
       };
@@ -679,11 +605,11 @@ function importExcel(file) {
         v.numeroIntervention = get(row, ['numero intervention', 'numero_intervention', 'n° intervention'])?.toString().trim() || '';
 
         // Accessoires : colonne "accessoires" avec valeurs séparées par des virgules
-        const accStr = get(row, ['accessoires', 'accessoires'])?.toString().trim() || '';
+        const accStr = get(row, ['accessoires'])?.toString().trim() || '';
         v.accessoires = splitList(accStr);
 
         // Documents : colonne "documents" avec valeurs séparées par des virgules
-        const docStr = get(row, ['documents', 'documents'])?.toString().trim() || '';
+        const docStr = get(row, ['documents'])?.toString().trim() || '';
         v.documents = splitList(docStr);
 
         vehicles.push(v);
@@ -776,8 +702,13 @@ societyFilter.addEventListener('change', renderList);
 statusFilter.addEventListener('change', renderList);
 
 // ---------- DÉMARRAGE ----------
-if (!loadFromStorage()) initDefaultData();
-renderList();
+// On démarre avec une liste vide si aucune sauvegarde n'existe
+if (!loadFromStorage()) {
+  // Pas de données initiales, on laisse la liste vide
+  vehicles = [];
+  save();
+  renderList();
+}
 </script>
 </body>
 </html>
