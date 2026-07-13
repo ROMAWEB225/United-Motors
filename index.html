@@ -90,10 +90,11 @@
       <div class="search">
         <input id="searchInput" placeholder="🔍 Plaque, client, société...">
         <select id="societyFilter"><option value="all">Toutes sociétés</option></select>
-        <select id="statusFilter"><option value="all">Tous statuts</option>
-          <option>Réceptionné</option><option>Diagnostic en cours</option>
-          <option>En attente accord client</option><option>Travaux en cours</option>
-          <option>Prêt pour livraison</option><option>Livré</option>
+        <select id="statusFilter">
+          <option value="all">Tous statuts</option>
+          <option>Réceptionné</option>
+          <option>Diagnostic en cours</option>
+          <option>Livré</option>
         </select>
       </div>
       <div id="vehiclesList" class="vehicles">Chargement...</div>
@@ -138,9 +139,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - VERSION SANS DONNÉES PRÉCHARGÉES    *
- *  L'application démarre vide. Seuls les véhicules importés *
- *  ou ajoutés manuellement apparaissent.                    *
+ *  SAV FLEET MANAGER - STATUTS REDUITS À 3 OPTIONS          *
+ *  Réceptionné / Diagnostic en cours / Livré                *
  ************************************************************/
 
 // ---------- CONFIG ----------
@@ -305,7 +305,8 @@ function selectVehicle(id) {
 function showDetail(v) {
   placeholderEl.style.display = 'none';
   detailEl.style.display = 'block';
-  const statusOpts = ['Réceptionné','Diagnostic en cours','En attente accord client','Travaux en cours','Prêt pour livraison','Livré'];
+  // Liste des statuts réduite à 3 options
+  const statusOpts = ['Réceptionné', 'Diagnostic en cours', 'Livré'];
   const photosHtml = (v.photos||[]).map(p => `<img src="${p}" style="max-width:70px; max-height:70px; border-radius:8px; margin:3px;">`).join('');
   let accHtml = '<div class="checkbox-group">';
   ACCESSOIRES.forEach(a => { const checked = v.accessoires.includes(a) ? 'checked' : ''; accHtml += `<label><input type="checkbox" class="acc-cb" value="${a}" ${checked}> ${a}</label>`; });
@@ -415,39 +416,67 @@ function handlePhotos(id, files) {
   });
 }
 
-// ---------- SAUVEGARDE VÉHICULE ----------
+// ---------- SAUVEGARDE VÉHICULE (avec rafraîchissement) ----------
 function saveVehicle(id) {
   const v = vehicles.find(v => v.id === id);
   if (!v) return;
   const oldStatus = v.statut;
-  v.statut = document.getElementById('fStatus').value;
-  v.dateCreation = document.getElementById('fCreation').value?.replace('T',' ') || '';
-  v.dateLivraison = document.getElementById('fLivraison').value?.replace('T',' ') || '';
-  v.societe = document.getElementById('fSociete').value;
-  v.plaque = document.getElementById('fPlaque').value;
-  v.marque = document.getElementById('fMarque').value;
-  v.modele = document.getElementById('fModele').value;
-  v.referenceCommande = document.getElementById('fRefCommande').value;
-  v.typeMaintenance = document.getElementById('fTypeMaintenance').value;
-  v.kilometrage = document.getElementById('fKm').value;
-  v.chassis = document.getElementById('fChassis').value;
-  v.energie = document.getElementById('fEnergie').value;
-  v.niveauCarburant = document.getElementById('fCarburant').value;
-  v.miseEnService = document.getElementById('fMiseService').value;
-  v.couleurExterne = document.getElementById('fCouleurExterne').value;
-  v.contactChauffeur = document.getElementById('fContactChauffeur').value;
-  v.objetVisite = document.getElementById('fObjetVisite').value;
-  v.autresObservations = document.getElementById('fAutresObs').value;
-  v.positionGeo = document.getElementById('fPositionGeo').value;
-  v.accessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
-  v.documents = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
+  // Récupération des valeurs
+  const newStatus = document.getElementById('fStatus').value;
+  const newDateCreation = document.getElementById('fCreation').value?.replace('T',' ') || '';
+  const newDateLivraison = document.getElementById('fLivraison').value?.replace('T',' ') || '';
+  const newSociete = document.getElementById('fSociete').value;
+  const newPlaque = document.getElementById('fPlaque').value;
+  const newMarque = document.getElementById('fMarque').value;
+  const newModele = document.getElementById('fModele').value;
+  const newRefCommande = document.getElementById('fRefCommande').value;
+  const newTypeMaintenance = document.getElementById('fTypeMaintenance').value;
+  const newKm = document.getElementById('fKm').value;
+  const newChassis = document.getElementById('fChassis').value;
+  const newEnergie = document.getElementById('fEnergie').value;
+  const newNiveauCarburant = document.getElementById('fCarburant').value;
+  const newMiseEnService = document.getElementById('fMiseService').value;
+  const newCouleurExterne = document.getElementById('fCouleurExterne').value;
+  const newContactChauffeur = document.getElementById('fContactChauffeur').value;
+  const newObjetVisite = document.getElementById('fObjetVisite').value;
+  const newAutresObs = document.getElementById('fAutresObs').value;
+  const newPositionGeo = document.getElementById('fPositionGeo').value;
+  const newAccessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
+  const newDocuments = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
+
+  // Mise à jour de l'objet
+  v.statut = newStatus;
+  v.dateCreation = newDateCreation;
+  v.dateLivraison = newDateLivraison;
+  v.societe = newSociete;
+  v.plaque = newPlaque;
+  v.marque = newMarque;
+  v.modele = newModele;
+  v.referenceCommande = newRefCommande;
+  v.typeMaintenance = newTypeMaintenance;
+  v.kilometrage = newKm;
+  v.chassis = newChassis;
+  v.energie = newEnergie;
+  v.niveauCarburant = newNiveauCarburant;
+  v.miseEnService = newMiseEnService;
+  v.couleurExterne = newCouleurExterne;
+  v.contactChauffeur = newContactChauffeur;
+  v.objetVisite = newObjetVisite;
+  v.autresObservations = newAutresObs;
+  v.positionGeo = newPositionGeo;
+  v.accessoires = newAccessoires;
+  v.documents = newDocuments;
+
+  // Historique
   if (oldStatus !== v.statut) {
     v.history.push({ date: today(), action: `Changement statut : ${oldStatus} → ${v.statut}`, status: v.statut });
   }
+
   save();
+  // Rafraîchir la liste et la vue détail
   renderList();
   selectVehicle(id);
-  alert('Enregistré');
+  alert('Enregistré !');
 }
 
 function deleteVehicle(id) {
@@ -605,8 +634,6 @@ function importExcel(file) {
         v.contactChauffeur = get('contactChauffeur')?.toString().trim() || '';
         v.objetVisite = get('objetVisite')?.toString().trim() || '';
         v.autresObservations = get('autresObservations')?.toString().trim() || '';
-
-        // On copie l'objet de la visite dans "travauxClient" pour l'export BNETD
         v.travauxClient = v.objetVisite;
 
         vehicles.push(v);
@@ -643,9 +670,6 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
     <div class="stat-card"><div class="stat-number">${statusCount['Réceptionné']||0}</div><div class="stat-label">Réceptionné</div></div>
     <div class="stat-card"><div class="stat-number">${statusCount['Diagnostic en cours']||0}</div><div class="stat-label">Diagnostic</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['En attente accord client']||0}</div><div class="stat-label">Attente accord</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['Travaux en cours']||0}</div><div class="stat-label">Travaux</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['Prêt pour livraison']||0}</div><div class="stat-label">Prêt livraison</div></div>
     <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>
     <div class="stat-card"><div class="stat-number">${avg}</div><div class="stat-label">Âge moyen (j)</div></div>
   `;
@@ -699,10 +723,8 @@ societyFilter.addEventListener('change', renderList);
 statusFilter.addEventListener('change', renderList);
 
 // ---------- DÉMARRAGE ----------
-// On charge les données existantes, sinon on démarre avec une liste vide
 if (!loadFromStorage()) {
-  // Aucune donnée : on laisse vehicles = []
-  save(); // on sauvegarde le tableau vide pour la prochaine fois
+  save();
 }
 renderList();
 </script>
