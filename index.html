@@ -139,8 +139,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - STATUTS REDUITS À 3 OPTIONS          *
- *  Réceptionné / Diagnostic en cours / Livré                *
+ *  SAV FLEET MANAGER - CORRECTION DU RAFFRAÎCHISSEMENT      *
  ************************************************************/
 
 // ---------- CONFIG ----------
@@ -294,18 +293,26 @@ function updateSocietyFilter() {
 
 // ---------- SÉLECTION ----------
 function selectVehicle(id) {
+  // On réinitialise l'ID sélectionné
   selectedId = id;
   const v = vehicles.find(v => v.id === id);
-  if (!v) return;
-  renderList();
-  showDetail(v);
+  if (!v) {
+    // Si le véhicule n'existe plus (supprimé), on vide le détail
+    detailEl.style.display = 'none';
+    placeholderEl.style.display = 'block';
+    renderList();
+    return;
+  }
+  renderList();  // Met à jour la liste (highlight)
+  showDetail(v); // Affiche le détail du véhicule sélectionné
 }
 
 // ---------- DÉTAIL ----------
 function showDetail(v) {
-  placeholderEl.style.display = 'none';
+  // On vide le contenu précédent
   detailEl.style.display = 'block';
-  // Liste des statuts réduite à 3 options
+  placeholderEl.style.display = 'none';
+  
   const statusOpts = ['Réceptionné', 'Diagnostic en cours', 'Livré'];
   const photosHtml = (v.photos||[]).map(p => `<img src="${p}" style="max-width:70px; max-height:70px; border-radius:8px; margin:3px;">`).join('');
   let accHtml = '<div class="checkbox-group">';
@@ -416,12 +423,12 @@ function handlePhotos(id, files) {
   });
 }
 
-// ---------- SAUVEGARDE VÉHICULE (avec rafraîchissement) ----------
+// ---------- SAUVEGARDE VÉHICULE (CORRIGÉE) ----------
 function saveVehicle(id) {
   const v = vehicles.find(v => v.id === id);
-  if (!v) return;
-  const oldStatus = v.statut;
-  // Récupération des valeurs
+  if (!v) { alert('Véhicule introuvable'); return; }
+  
+  // Récupération des valeurs depuis le DOM
   const newStatus = document.getElementById('fStatus').value;
   const newDateCreation = document.getElementById('fCreation').value?.replace('T',' ') || '';
   const newDateLivraison = document.getElementById('fLivraison').value?.replace('T',' ') || '';
@@ -443,6 +450,9 @@ function saveVehicle(id) {
   const newPositionGeo = document.getElementById('fPositionGeo').value;
   const newAccessoires = Array.from(document.querySelectorAll('.acc-cb:checked')).map(cb => cb.value);
   const newDocuments = Array.from(document.querySelectorAll('.doc-cb:checked')).map(cb => cb.value);
+
+  // Sauvegarde de l'ancien statut pour l'historique
+  const oldStatus = v.statut;
 
   // Mise à jour de l'objet
   v.statut = newStatus;
@@ -467,16 +477,23 @@ function saveVehicle(id) {
   v.accessoires = newAccessoires;
   v.documents = newDocuments;
 
-  // Historique
+  // Historique des changements de statut
   if (oldStatus !== v.statut) {
+    if (!v.history) v.history = [];
     v.history.push({ date: today(), action: `Changement statut : ${oldStatus} → ${v.statut}`, status: v.statut });
   }
 
+  // Sauvegarde dans localStorage
   save();
-  // Rafraîchir la liste et la vue détail
+
+  // Rafraîchir la liste
   renderList();
+
+  // Réafficher le détail du même véhicule (avec les nouvelles valeurs)
+  // On sélectionne à nouveau le même ID
   selectVehicle(id);
-  alert('Enregistré !');
+
+  alert('✅ Enregistré !');
 }
 
 function deleteVehicle(id) {
