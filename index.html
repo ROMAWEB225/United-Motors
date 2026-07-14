@@ -3,80 +3,411 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SAV Fleet Manager</title>
+  <title>SAV Fleet Manager Pro</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
+    /* ========== VARIABLES THÈME CLAIR ========== */
+    :root {
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --text: #1a202c;
+      --text-light: #4a5568;
+      --border: #e2e8f0;
+      --header-bg: #1a365d;
+      --header-text: #ffffff;
+      --primary: #ed8936;
+      --primary-hover: #dd6b20;
+      --primary-light: #fbd38d;
+      --shadow: rgba(0,0,0,0.08);
+      --card-hover: #ebf8ff;
+      --badge-bg: #edf2f7;
+      --alert-bg: #fef3c7;
+      --alert-text: #92400e;
+      --success: #48bb78;
+      --danger: #fc8181;
+      --warning: #f6ad55;
+      --info: #63b3ed;
+    }
+
+    /* ========== THÈME SOMBRE ========== */
+    [data-theme="dark"] {
+      --bg: #1a202c;
+      --card-bg: #2d3748;
+      --text: #e2e8f0;
+      --text-light: #a0aec0;
+      --border: #4a5568;
+      --header-bg: #0d1a2b;
+      --header-text: #e2e8f0;
+      --primary: #ed8936;
+      --primary-hover: #dd6b20;
+      --primary-light: #744210;
+      --shadow: rgba(0,0,0,0.4);
+      --card-hover: #4a5568;
+      --badge-bg: #4a5568;
+      --alert-bg: #744210;
+      --alert-text: #fef3c7;
+      --success: #48bb78;
+      --danger: #fc8181;
+      --warning: #f6ad55;
+      --info: #63b3ed;
+    }
+
+    /* ========== STYLES GÉNÉRAUX ========== */
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Segoe UI', Tahoma, sans-serif; background:#f4f7fc; color:#1e2a3e; }
-    header { background:#1e3c72; color:white; padding:1rem 2rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem; align-items:center; }
+    body {
+      font-family:'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+    header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding:1rem 2rem;
+      display:flex;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:1rem;
+      align-items:center;
+    }
     header h1 { font-size:1.5rem; display:flex; align-items:center; gap:0.5rem; }
-    .btn { background:#ff9800; border:none; padding:0.5rem 1rem; border-radius:30px; color:#1e2a3e; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:0.5rem; }
-    .btn:hover { background:#fb8c00; }
-    .btn-green { background:#2e7d32; color:white; }
-    .btn-green:hover { background:#1b5e20; }
-    .btn-red { background:#c0392b; color:white; }
-    .btn-red:hover { background:#a93226; }
-    .btn-outline { background:#e2e8f0; color:#1e2a3e; }
-    .btn-outline:hover { background:#cbd5e1; }
-    .tabs { display:flex; gap:0.5rem; background:white; padding:0 1.5rem; border-bottom:2px solid #e2e8f0; }
-    .tab { background:none; border:none; padding:0.8rem 1.5rem; font-weight:bold; cursor:pointer; color:#5b6e8c; }
-    .tab.active { color:#ff9800; border-bottom:3px solid #ff9800; }
-    .dashboard { display:flex; flex-wrap:wrap; gap:1.5rem; padding:1.5rem; }
-    .panel { background:white; border-radius:24px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:1rem; overflow-y:auto; }
-    .panel-list { flex:1.2; min-width:260px; height:calc(100vh - 100px); }
-    .panel-detail { flex:3; min-width:320px; height:calc(100vh - 100px); }
-    .search { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem; }
-    .search input, .search select { flex:1; padding:0.5rem; border:1px solid #cbd5e1; border-radius:20px; }
+    header h1 span { font-weight:300; font-size:0.9rem; opacity:0.8; }
+    .btn {
+      background: var(--primary);
+      border:none;
+      padding:0.5rem 1rem;
+      border-radius:30px;
+      color:#1a202c;
+      font-weight:bold;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:0.5rem;
+      transition:0.2s;
+      font-size:0.9rem;
+    }
+    .btn:hover { background: var(--primary-hover); transform:scale(1.02); }
+    .btn-green { background:#38a169; color:white; }
+    .btn-green:hover { background:#2f855a; }
+    .btn-red { background:#e53e3e; color:white; }
+    .btn-red:hover { background:#c53030; }
+    .btn-outline { background:var(--badge-bg); color:var(--text); }
+    .btn-outline:hover { background:var(--border); }
+    .btn-sm { padding:0.3rem 0.8rem; font-size:0.8rem; }
+
+    .tabs {
+      display:flex;
+      gap:0.5rem;
+      background:var(--card-bg);
+      padding:0.5rem 1.5rem 0 1.5rem;
+      border-bottom:2px solid var(--border);
+    }
+    .tab {
+      background:none;
+      border:none;
+      padding:0.8rem 1.5rem;
+      font-weight:bold;
+      cursor:pointer;
+      color:var(--text-light);
+      transition:0.2s;
+      border-bottom:3px solid transparent;
+    }
+    .tab:hover { color:var(--text); }
+    .tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+    .dashboard {
+      display:flex;
+      flex-wrap:wrap;
+      gap:1.5rem;
+      padding:1.5rem;
+      min-height:calc(100vh - 130px);
+    }
+    .panel {
+      background:var(--card-bg);
+      border-radius:24px;
+      box-shadow:0 4px 12px var(--shadow);
+      padding:1rem;
+      overflow-y:auto;
+      transition:background 0.3s;
+    }
+    .panel-list { flex:1.2; min-width:260px; height:calc(100vh - 130px); }
+    .panel-detail { flex:3; min-width:320px; height:calc(100vh - 130px); }
+    .panel-dashboard { width:100%; padding:1.5rem; }
+
+    .search {
+      display:flex;
+      gap:0.5rem;
+      flex-wrap:wrap;
+      margin-bottom:1rem;
+    }
+    .search input, .search select {
+      flex:1;
+      padding:0.5rem;
+      border:1px solid var(--border);
+      border-radius:20px;
+      background:var(--bg);
+      color:var(--text);
+    }
+
     .vehicles { display:flex; flex-direction:column; gap:0.75rem; }
-    .card { background:#f8fafc; border-left:5px solid #ff9800; padding:0.8rem; border-radius:16px; cursor:pointer; transition:0.1s; }
-    .card:hover { background:#eef2ff; }
-    .card.selected { background:#eef2ff; border-left-color:#1e3c72; }
+    .card {
+      background:var(--card-bg);
+      border-left:5px solid var(--primary);
+      padding:0.8rem;
+      border-radius:16px;
+      cursor:pointer;
+      transition:0.2s;
+      border:1px solid transparent;
+    }
+    .card:hover { background:var(--card-hover); }
+    .card.selected { background:var(--card-hover); border-left-color:#1e3c72; border-color:var(--primary); }
     .card h4 { margin-bottom:0.2rem; }
-    .card p { font-size:0.8rem; color:#334155; }
-    .badge { display:inline-block; background:#e2e8f0; padding:0.2rem 0.5rem; border-radius:20px; font-size:0.7rem; margin-top:0.3rem; }
+    .card p { font-size:0.8rem; color:var(--text-light); }
+    .badge {
+      display:inline-block;
+      background:var(--badge-bg);
+      padding:0.2rem 0.5rem;
+      border-radius:20px;
+      font-size:0.7rem;
+      margin-top:0.3rem;
+      color:var(--text);
+    }
+    .badge-alert {
+      background:var(--alert-bg);
+      color:var(--alert-text);
+    }
+
     .form-group { margin-bottom:1rem; }
     .form-group label { font-weight:600; display:block; margin-bottom:0.3rem; }
-    .form-group input, .form-group select, .form-group textarea { width:100%; padding:0.5rem; border:1px solid #cbd5e1; border-radius:12px; font-family:inherit; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%;
+      padding:0.5rem;
+      border:1px solid var(--border);
+      border-radius:12px;
+      font-family:inherit;
+      background:var(--bg);
+      color:var(--text);
+    }
     .row { display:flex; gap:1rem; flex-wrap:wrap; }
     .row .form-group { flex:1; margin-bottom:0; }
     .checkbox-group { display:flex; flex-wrap:wrap; gap:0.8rem; margin-top:0.3rem; }
     .checkbox-group label { display:flex; align-items:center; gap:0.3rem; font-weight:normal; }
-    .map-container { height:220px; border-radius:16px; margin:0.5rem 0; background:#eef2ff; }
+    .map-container { height:220px; border-radius:16px; margin:0.5rem 0; background:var(--bg); }
     .photo-preview { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.3rem; }
     .photo-preview img { width:70px; height:70px; object-fit:cover; border-radius:8px; }
-    .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:0.8rem; margin-bottom:1.5rem; }
-    .stat-card { background:white; border-radius:16px; padding:0.8rem; text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
-    .stat-number { font-size:1.8rem; font-weight:bold; color:#1e3c72; }
-    .stat-label { font-size:0.8rem; color:#5b6e8c; }
-    .pending-list { max-height:200px; overflow-y:auto; text-align:left; }
-    .pending-list ul { list-style:none; padding:0; }
-    .pending-list li { padding:0.2rem 0; border-bottom:1px solid #eef2ff; }
+
     .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
-    .modal-content { background:white; border-radius:24px; padding:1.5rem; max-width:550px; width:90%; position:relative; max-height:90vh; overflow-y:auto; }
-    .close { position:absolute; right:1rem; top:0.5rem; font-size:1.8rem; cursor:pointer; }
-    .placeholder { text-align:center; margin-top:3rem; color:#5b6e8c; }
+    .modal-content { background:var(--card-bg); border-radius:24px; padding:1.5rem; max-width:550px; width:90%; position:relative; max-height:90vh; overflow-y:auto; }
+    .close { position:absolute; right:1rem; top:0.5rem; font-size:1.8rem; cursor:pointer; color:var(--text); }
+    .placeholder { text-align:center; margin-top:3rem; color:var(--text-light); }
     .action-buttons { display:flex; gap:0.8rem; justify-content:flex-end; margin-top:1rem; flex-wrap:wrap; }
+
+    .theme-toggle {
+      background:none;
+      border:none;
+      color:var(--header-text);
+      font-size:1.2rem;
+      cursor:pointer;
+      padding:0.3rem 0.8rem;
+    }
+
+    .tab-content {
+      display:none;
+      width:100%;
+      flex-wrap:wrap;
+      gap:1.5rem;
+    }
+    .tab-content.active {
+      display:flex;
+    }
+
     @media(max-width:700px){ .dashboard{flex-direction:column;} .panel-list,.panel-detail{height:auto;max-height:50vh;} }
+
     .pdf-header { text-align:center; margin-bottom:10px; }
     .pdf-header h2 { color:#1e3c72; }
     .pdf-table { width:100%; border-collapse:collapse; font-size:8pt; font-family:'Segoe UI', Arial, sans-serif; }
     .pdf-table th,.pdf-table td { border:1px solid #aaa; padding:4px 3px; vertical-align:top; text-align:left; }
     .pdf-table th { background:#1e3c72; color:white; }
     .pdf-table tr:nth-child(even) { background:#f9f9f9; }
+
+    /* ========== STYLES TABLEAU DE BORD AMÉLIORÉ ========== */
+    .dashboard-stats {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+      gap:1rem;
+      margin-bottom:1.5rem;
+    }
+    .stat-card-clickable {
+      background:var(--card-bg);
+      border-radius:16px;
+      padding:1.2rem 1rem;
+      text-align:center;
+      box-shadow:0 2px 8px var(--shadow);
+      cursor:pointer;
+      transition:0.2s;
+      border:2px solid transparent;
+      position:relative;
+    }
+    .stat-card-clickable:hover {
+      transform:translateY(-4px);
+      border-color:var(--primary);
+      box-shadow:0 8px 20px var(--shadow);
+    }
+    .stat-card-clickable .stat-icon {
+      font-size:2rem;
+      margin-bottom:0.3rem;
+      display:block;
+    }
+    .stat-card-clickable .stat-number {
+      font-size:2.2rem;
+      font-weight:bold;
+      display:block;
+      line-height:1.2;
+    }
+    .stat-card-clickable .stat-label {
+      font-size:0.85rem;
+      color:var(--text-light);
+      margin-top:0.2rem;
+      display:block;
+    }
+    .stat-card-clickable .stat-sub {
+      font-size:0.7rem;
+      color:var(--text-light);
+      margin-top:0.3rem;
+      opacity:0.7;
+    }
+    .stat-card-clickable .stat-badge {
+      position:absolute;
+      top:-8px;
+      right:-8px;
+      background:var(--danger);
+      color:white;
+      border-radius:50%;
+      width:28px;
+      height:28px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:0.7rem;
+      font-weight:bold;
+    }
+
+    .dashboard-charts {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:1.5rem;
+      margin-bottom:1.5rem;
+    }
+    @media(max-width:800px){ .dashboard-charts { grid-template-columns:1fr; } }
+
+    .chart-box {
+      background:var(--card-bg);
+      border-radius:16px;
+      padding:1.2rem;
+      box-shadow:0 2px 8px var(--shadow);
+    }
+    .chart-box h4 {
+      margin-bottom:0.8rem;
+      color:var(--text);
+      font-size:0.95rem;
+      display:flex;
+      align-items:center;
+      gap:0.5rem;
+    }
+    .chart-bar-container {
+      display:flex;
+      flex-direction:column;
+      gap:0.5rem;
+    }
+    .chart-bar-row {
+      display:flex;
+      align-items:center;
+      gap:0.8rem;
+    }
+    .chart-bar-label {
+      min-width:100px;
+      font-size:0.8rem;
+      color:var(--text-light);
+      text-align:right;
+    }
+    .chart-bar-track {
+      flex:1;
+      height:24px;
+      background:var(--bg);
+      border-radius:12px;
+      overflow:hidden;
+      position:relative;
+    }
+    .chart-bar-fill {
+      height:100%;
+      border-radius:12px;
+      transition:width 0.8s ease;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      padding-right:8px;
+      font-size:0.7rem;
+      font-weight:bold;
+      color:white;
+      min-width:30px;
+    }
+    .chart-bar-fill.orange { background:linear-gradient(90deg,#ed8936,#dd6b20); }
+    .chart-bar-fill.blue { background:linear-gradient(90deg,#4299e1,#3182ce); }
+    .chart-bar-fill.green { background:linear-gradient(90deg,#48bb78,#38a169); }
+    .chart-bar-fill.red { background:linear-gradient(90deg,#fc8181,#e53e3e); }
+    .chart-bar-fill.purple { background:linear-gradient(90deg,#9f7aea,#805ad5); }
+
+    .dashboard-actions {
+      display:flex;
+      gap:0.8rem;
+      flex-wrap:wrap;
+      margin-top:0.5rem;
+    }
+    .dashboard-actions .btn {
+      flex:1;
+      min-width:150px;
+      justify-content:center;
+    }
+
+    .timeline-compact {
+      max-height:250px;
+      overflow-y:auto;
+    }
+    .timeline-compact .item {
+      display:flex;
+      justify-content:space-between;
+      padding:0.5rem 0;
+      border-bottom:1px solid var(--border);
+      font-size:0.85rem;
+    }
+    .timeline-compact .item .date { color:var(--text-light); }
+    .timeline-compact .item .label { font-weight:500; }
+
+    .status-dot {
+      display:inline-block;
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      margin-right:6px;
+    }
+    .status-dot.receptionne { background:#ed8936; }
+    .status-dot.diagnostic { background:#4299e1; }
+    .status-dot.livre { background:#48bb78; }
   </style>
 </head>
 <body>
 <header>
-  <h1><i class="fas fa-truck-moving"></i> SAV Fleet Manager</h1>
-  <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+  <h1><i class="fas fa-truck-moving"></i> SAV Fleet Manager <span>Pro</span></h1>
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+    <button id="themeToggle" class="theme-toggle"><i class="fas fa-moon"></i></button>
     <button id="excelBtn" class="btn btn-green"><i class="fas fa-file-excel"></i> Excel</button>
     <button id="pdfBtn" class="btn btn-red"><i class="fas fa-file-pdf"></i> PDF</button>
     <button id="backupBtn" class="btn btn-outline"><i class="fas fa-download"></i> Sauvegarder</button>
     <button id="restoreBtn" class="btn btn-outline"><i class="fas fa-upload"></i> Restaurer</button>
-    <button id="importBtn" class="btn btn-outline"><i class="fas fa-file-import"></i> Importer Excel</button>
+    <button id="importBtn" class="btn btn-outline"><i class="fas fa-file-import"></i> Importer</button>
     <button id="addBtn" class="btn"><i class="fas fa-plus"></i> Nouveau</button>
   </div>
 </header>
@@ -85,8 +416,9 @@
   <button class="tab" data-tab="dashboard">📊 Tableau de bord</button>
 </div>
 
-<main class="dashboard" id="main">
-  <div id="tabList" style="display:flex; gap:1.5rem; width:100%; flex-wrap:wrap;">
+<main class="dashboard" id="mainContainer">
+  <!-- Onglet Liste -->
+  <div id="tab-list" class="tab-content active">
     <div class="panel panel-list">
       <div class="search">
         <input id="searchInput" placeholder="🔍 Plaque, client, société...">
@@ -105,10 +437,28 @@
       <div id="detailForm" style="display:none;"></div>
     </div>
   </div>
-  <div id="tabDashboard" style="display:none; width:100%;">
-    <div class="stats" id="statsContainer"></div>
-    <div id="pendingContainer" class="stat-card" style="margin-bottom:1rem;"></div>
-    <div id="chartContainer" style="background:white; border-radius:16px; padding:1rem;"></div>
+
+  <!-- Onglet Tableau de bord -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="panel panel-dashboard">
+      <div class="dashboard-stats" id="statsContainer"></div>
+      <div class="dashboard-charts">
+        <div class="chart-box" id="chartStatusContainer">
+          <h4><i class="fas fa-chart-bar" style="color:var(--primary);"></i> Répartition par statut</h4>
+          <div class="chart-bar-container" id="statusBars"></div>
+        </div>
+        <div class="chart-box">
+          <h4><i class="fas fa-clock" style="color:var(--info);"></i> Dernières activités</h4>
+          <div class="timeline-compact" id="recentActivity"></div>
+        </div>
+      </div>
+      <div class="dashboard-actions" id="quickActions">
+        <button class="btn btn-outline" data-filter="Réceptionné"><i class="fas fa-inbox"></i> Voir réceptionnés</button>
+        <button class="btn btn-outline" data-filter="Diagnostic en cours"><i class="fas fa-stethoscope"></i> Voir en diagnostic</button>
+        <button class="btn btn-outline" data-filter="Livré"><i class="fas fa-check-circle" style="color:var(--success);"></i> Voir livrés</button>
+        <button class="btn btn-outline" id="viewOverdueBtn"><i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i> Voir en retard</button>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -120,7 +470,7 @@
 
 <div id="importModal" class="modal">
   <div class="modal-content"><span class="close">&times;</span><h2>Importer un fichier Excel</h2>
-    <p>Sélectionnez un fichier .xlsx ou .xls contenant vos véhicules.</p>
+    <p>Sélectionnez un fichier .xlsx ou .xls</p>
     <input type="file" id="fileInput" accept=".xlsx,.xls"><br><br>
     <button id="importConfirmBtn" class="btn">Importer</button>
   </div>
@@ -129,7 +479,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER - VERSION STABLE                       *
+ *  SAV FLEET MANAGER PRO - TABLEAU DE BORD AMÉLIORÉ        *
  ************************************************************/
 
 // ---------- CONFIG ----------
@@ -142,6 +492,7 @@ let vehicles = [];
 let selectedId = null;
 let map = null;
 let marker = null;
+let darkMode = localStorage.getItem('darkMode') === 'true';
 
 // DOM refs
 const listEl = document.getElementById('vehiclesList');
@@ -151,8 +502,23 @@ const searchInput = document.getElementById('searchInput');
 const societyFilter = document.getElementById('societyFilter');
 const statusFilter = document.getElementById('statusFilter');
 const statsContainer = document.getElementById('statsContainer');
-const pendingContainer = document.getElementById('pendingContainer');
-const chartContainer = document.getElementById('chartContainer');
+
+// ---------- THÈME ----------
+function applyTheme() {
+  if (darkMode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('themeToggle').innerHTML = '<i class="fas fa-moon"></i>';
+  }
+  localStorage.setItem('darkMode', darkMode);
+}
+document.getElementById('themeToggle').addEventListener('click', () => {
+  darkMode = !darkMode;
+  applyTheme();
+});
+applyTheme();
 
 // ---------- UTILITAIRES ----------
 function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
@@ -187,6 +553,19 @@ function parseDate(val) {
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function getDaysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return Math.floor((Date.now() - d) / (1000*60*60*24));
+}
+
+function isOverdue(v) {
+  if (v.statut === 'Livré') return false;
+  if (!v.dateCreation) return false;
+  const days = getDaysSince(v.dateCreation);
+  return days !== null && days > 7;
 }
 
 function newVehicle(plaque, societe, modele) {
@@ -232,7 +611,7 @@ function newVehicle(plaque, societe, modele) {
   };
 }
 
-// ---------- SAUVEGARDE / CHARGEMENT ----------
+// ---------- SAUVEGARDE ----------
 function save() { localStorage.setItem('fleet_data', JSON.stringify(vehicles)); }
 
 function loadFromStorage() {
@@ -244,7 +623,7 @@ function loadFromStorage() {
         vehicles = parsed.map(v => ({ ...newVehicle('','',''), ...v, accessoires: v.accessoires||[], documents: v.documents||[], photos: v.photos||[], history: v.history||[] }));
         return true;
       }
-    } catch(e) { console.warn('Erreur chargement', e); }
+    } catch(e) {}
   }
   return false;
 }
@@ -264,24 +643,25 @@ function renderList() {
     return matchText && matchSociety && matchStatus;
   });
   if (!filtered.length) { 
-    listEl.innerHTML = '<div class="placeholder">Aucun véhicule enregistré. Importez ou ajoutez-en un.</div>'; 
+    listEl.innerHTML = '<div class="placeholder">Aucun véhicule enregistré.</div>'; 
     return; 
   }
-  listEl.innerHTML = filtered.map(v => `
+  listEl.innerHTML = filtered.map(v => {
+    const overdue = isOverdue(v);
+    const dotClass = v.statut === 'Réceptionné' ? 'receptionne' : v.statut === 'Diagnostic en cours' ? 'diagnostic' : 'livre';
+    return `
     <div class="card ${selectedId === v.id ? 'selected' : ''}" data-id="${v.id}">
       <h4>${escapeHtml(v.plaque)} - ${escapeHtml(v.societe)}</h4>
-      <p>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
+      <p><span class="status-dot ${dotClass}"></span>${escapeHtml(v.marque)} ${escapeHtml(v.modele)} • ${v.statut}</p>
       <span class="badge">${v.dateCreation?.split(' ')[0] || ''}</span>
       ${v.photos?.length ? `<span class="badge"><i class="fas fa-camera"></i> ${v.photos.length}</span>` : ''}
+      ${overdue ? `<span class="badge badge-alert"><i class="fas fa-exclamation-triangle"></i> En retard</span>` : ''}
     </div>
-  `).join('');
+  `}).join('');
   
-  // Attacher les événements de clic
   listEl.querySelectorAll('.card').forEach(el => {
-    el.addEventListener('click', function(e) {
-      const id = this.dataset.id;
-      console.log('Clic sur carte ID:', id);
-      selectVehicle(id);
+    el.addEventListener('click', function() {
+      selectVehicle(this.dataset.id);
     });
   });
   updateSocietyFilter();
@@ -296,26 +676,21 @@ function updateSocietyFilter() {
 
 // ---------- SÉLECTION ----------
 function selectVehicle(id) {
-  console.log('selectVehicle appelé avec ID:', id);
-  // Vérifier que le véhicule existe
   const v = vehicles.find(v => v.id === id);
   if (!v) {
-    console.warn('Véhicule introuvable:', id);
     detailEl.style.display = 'none';
     placeholderEl.style.display = 'block';
     selectedId = null;
     renderList();
     return;
   }
-  
   selectedId = id;
-  renderList(); // Met à jour la liste (highlight)
+  renderList();
   showDetail(v);
 }
 
 // ---------- DÉTAIL ----------
 function showDetail(v) {
-  console.log('showDetail pour:', v.plaque, v.id);
   detailEl.style.display = 'block';
   placeholderEl.style.display = 'none';
   
@@ -328,8 +703,24 @@ function showDetail(v) {
   DOCUMENTS.forEach(d => { const checked = v.documents.includes(d) ? 'checked' : ''; docHtml += `<label><input type="checkbox" class="doc-cb" value="${d}" ${checked}> ${d}</label>`; });
   docHtml += '</div>';
 
+  let historyHtml = '<div class="timeline">';
+  if (v.history && v.history.length) {
+    v.history.slice().reverse().forEach(h => {
+      historyHtml += `<div class="timeline-item">
+        <span class="date">${h.date?.split(' ')[0] || ''}</span>
+        <span class="action">${escapeHtml(h.action)}</span>
+      </div>`;
+    });
+  } else {
+    historyHtml += '<div class="timeline-item"><span class="action">Aucun historique</span></div>';
+  }
+  historyHtml += '</div>';
+
   detailEl.innerHTML = `
     <h2>${escapeHtml(v.plaque)} - ${escapeHtml(v.societe)}</h2>
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+      <button id="pdfFicheBtn" class="btn btn-sm btn-outline"><i class="fas fa-file-pdf"></i> Fiche PDF</button>
+    </div>
     <div class="row">
       <div class="form-group"><label>Statut</label><select id="fStatus">${statusOpts.map(s => `<option ${v.statut===s?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="form-group"><label>Date création</label><input type="datetime-local" id="fCreation" value="${v.dateCreation?.replace(' ','T')||''}"></div>
@@ -356,7 +747,7 @@ function showDetail(v) {
       <div class="form-group"><label>Couleur (Externe)</label><input type="text" id="fCouleurExterne" value="${escapeHtml(v.couleurExterne||'')}"></div>
     </div>
     <div class="row">
-      <div class="form-group"><label>Contact Chauffeur Déposant</label><input type="text" id="fContactChauffeur" value="${escapeHtml(v.contactChauffeur||'')}"></div>
+      <div class="form-group"><label>Contact Chauffeur</label><input type="text" id="fContactChauffeur" value="${escapeHtml(v.contactChauffeur||'')}"></div>
       <div class="form-group"><label>Objet de la visite</label><input type="text" id="fObjetVisite" value="${escapeHtml(v.objetVisite||'')}"></div>
     </div>
     <div class="form-group"><label>Autres observations</label><textarea id="fAutresObs" rows="2">${escapeHtml(v.autresObservations||'')}</textarea></div>
@@ -364,18 +755,18 @@ function showDetail(v) {
     <div class="form-group"><label>Documents</label>${docHtml}</div>
     <div class="form-group"><label>Position (texte)</label><input type="text" id="fPositionGeo" value="${escapeHtml(v.positionGeo||'')}"></div>
     <div class="form-group"><label>Photos</label><input type="file" id="photoUpload" accept="image/*" multiple><div id="photoPreview" class="photo-preview">${photosHtml}</div></div>
-    <div class="form-group"><div id="mapContainer" class="map-container"></div><button id="getPosBtn" class="btn btn-outline" style="margin-top:0.5rem;"><i class="fas fa-location-dot"></i> Ma position</button></div>
+    <div class="form-group"><div id="mapContainer" class="map-container"></div><button id="getPosBtn" class="btn btn-sm btn-outline"><i class="fas fa-location-dot"></i> Ma position</button></div>
+    <div class="form-group"><label>Historique</label>${historyHtml}</div>
     <div class="action-buttons"><button id="deleteBtn" class="btn btn-red">Supprimer</button><button id="saveBtn" class="btn">Enregistrer</button></div>
   `;
   
-  // Initialiser la carte après un court délai
   setTimeout(() => initMap(v.position), 300);
   
-  // Attacher les événements
   document.getElementById('saveBtn').addEventListener('click', () => saveVehicle(v.id));
   document.getElementById('deleteBtn').addEventListener('click', () => deleteVehicle(v.id));
   document.getElementById('getPosBtn').addEventListener('click', () => getCurrentPos(v.id));
   document.getElementById('photoUpload').addEventListener('change', (e) => handlePhotos(v.id, e.target.files));
+  document.getElementById('pdfFicheBtn').addEventListener('click', () => exportFichePDF(v.id));
 }
 
 // ---------- CARTE ----------
@@ -469,9 +860,7 @@ function saveVehicle(id) {
   }
 
   save();
-  // Rafraîchir la liste
   renderList();
-  // Réafficher le détail du même véhicule
   showDetail(v);
   alert('✅ Enregistré !');
 }
@@ -488,13 +877,61 @@ function deleteVehicle(id) {
   renderList();
 }
 
-// ---------- AJOUT VÉHICULE ----------
+// ---------- AJOUT ----------
 function addVehicle(plaque, societe, modele) {
   const v = newVehicle(plaque, societe, modele);
   vehicles.push(v);
   save();
   renderList();
   selectVehicle(v.id);
+}
+
+// ---------- EXPORT FICHE PDF ----------
+function exportFichePDF(id) {
+  const v = vehicles.find(v => v.id === id);
+  if (!v) return;
+  
+  const el = document.createElement('div');
+  el.style.padding = '20px';
+  el.style.fontFamily = 'Arial, sans-serif';
+  el.style.backgroundColor = 'white';
+  el.style.color = '#1e2a3e';
+  
+  let html = `
+    <div style="text-align:center; margin-bottom:20px;">
+      <h2 style="color:#1e3c72;">FICHE DE SUIVI - ${escapeHtml(v.plaque)}</h2>
+      <p style="color:#5b6e8c;">${escapeHtml(v.societe)} - ${escapeHtml(v.marque)} ${escapeHtml(v.modele)}</p>
+      <p>Statut : <strong>${v.statut}</strong></p>
+      <p>Date création : ${v.dateCreation?.split(' ')[0] || ''}</p>
+    </div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Immatriculation</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.plaque)}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Client</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.societe)}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Marque / Modèle</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.marque)} ${escapeHtml(v.modele)}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Kilométrage</strong></td><td style="padding:5px; border:1px solid #ccc;">${v.kilometrage || ''}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>N° Châssis</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.chassis||'')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Énergie</strong></td><td style="padding:5px; border:1px solid #ccc;">${v.energie}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Niveau carburant</strong></td><td style="padding:5px; border:1px solid #ccc;">${v.niveauCarburant}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Couleur</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.couleurExterne||'')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Objet de la visite</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.objetVisite||'')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Pièces à remplacer</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.pieces||'')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Observations</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.autresObservations||'')}</td></tr>
+      <tr><td style="padding:5px; border:1px solid #ccc;"><strong>Position</strong></td><td style="padding:5px; border:1px solid #ccc;">${escapeHtml(v.positionGeo||'')}</td></tr>
+    </table>
+    <div style="margin-top:10px; font-size:9pt; color:#999;">
+      <p>Document généré automatiquement - ${new Date().toLocaleString()}</p>
+    </div>
+  `;
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  
+  html2pdf().from(el).set({
+    margin: [0.5,0.5,0.5,0.5],
+    filename: `Fiche_${v.plaque}_${new Date().toISOString().slice(0,10)}.pdf`,
+    image: { type:'jpeg', quality:0.95 },
+    html2canvas: { scale:2 },
+    jsPDF: { unit:'in', format:'a4', orientation:'portrait' }
+  }).save().then(() => el.remove());
 }
 
 // ---------- EXPORT EXCEL ----------
@@ -519,7 +956,7 @@ function exportExcel() {
   XLSX.writeFile(wb, `fleet_export_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// ---------- EXPORT PDF ----------
+// ---------- EXPORT PDF GLOBAL ----------
 function exportPdf() {
   const el = document.createElement('div');
   el.style.padding = '15px';
@@ -646,47 +1083,182 @@ function importExcel(file) {
         renderList();
         alert(`${imported} véhicules importés avec succès.`);
       } else {
-        alert('Aucun véhicule importé. Vérifiez la colonne "Immatriculation".');
+        alert('Aucun véhicule importé.');
       }
     } catch(err) {
-      alert('Erreur lors de la lecture : ' + err.message);
+      alert('Erreur : ' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-// ---------- TABLEAU DE BORD ----------
+// ---------- TABLEAU DE BORD AMÉLIORÉ ----------
 function renderDashboard() {
   const total = vehicles.length;
-  const statusCount = {};
-  vehicles.forEach(v => { statusCount[v.statut] = (statusCount[v.statut]||0)+1; });
+  const statusCount = { 'Réceptionné':0, 'Diagnostic en cours':0, 'Livré':0 };
+  vehicles.forEach(v => { 
+    if (statusCount[v.statut] !== undefined) statusCount[v.statut]++; 
+    else statusCount[v.statut] = 1;
+  });
   const pending = vehicles.filter(v => v.statut !== 'Livré' && (!v.dateLivraison || v.dateLivraison === ''));
+  const overdue = vehicles.filter(v => isOverdue(v));
   const avgDays = vehicles.filter(v => v.dateCreation).map(v => {
     const d = new Date(v.dateCreation);
     return Math.floor((Date.now() - d) / (1000*60*60*24));
   });
   const avg = avgDays.length ? (avgDays.reduce((a,b)=>a+b,0)/avgDays.length).toFixed(0) : 0;
 
-  statsContainer.innerHTML = `
-    <div class="stat-card"><div class="stat-number">${total}</div><div class="stat-label">Total</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['Réceptionné']||0}</div><div class="stat-label">Réceptionné</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['Diagnostic en cours']||0}</div><div class="stat-label">Diagnostic</div></div>
-    <div class="stat-card"><div class="stat-number">${statusCount['Livré']||0}</div><div class="stat-label">Livrés</div></div>
-    <div class="stat-card"><div class="stat-number">${avg}</div><div class="stat-label">Âge moyen (j)</div></div>
+  // Stats cards avec icônes et couleurs
+  const colors = {
+    'Réceptionné': { icon: 'fa-inbox', color: 'var(--primary)', bg: 'var(--primary-light)' },
+    'Diagnostic en cours': { icon: 'fa-stethoscope', color: 'var(--info)', bg: '#bee3f8' },
+    'Livré': { icon: 'fa-check-circle', color: 'var(--success)', bg: '#c6f6d5' }
+  };
+
+  let statsHtml = '';
+  for (const [status, count] of Object.entries(statusCount)) {
+    const c = colors[status] || { icon: 'fa-circle', color: 'var(--text-light)', bg: 'var(--badge-bg)' };
+    statsHtml += `
+      <div class="stat-card-clickable" data-filter="${status}">
+        <span class="stat-icon" style="color:${c.color}"><i class="fas ${c.icon}"></i></span>
+        <span class="stat-number">${count}</span>
+        <span class="stat-label">${status}</span>
+      </div>
+    `;
+  }
+
+  statsHtml += `
+    <div class="stat-card-clickable" id="overdueCard">
+      <span class="stat-icon" style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i></span>
+      <span class="stat-number">${overdue.length}</span>
+      <span class="stat-label">En retard (>7j)</span>
+      <span class="stat-sub">Délai moyen ${avg} jours</span>
+    </div>
+    <div class="stat-card-clickable" id="pendingCard">
+      <span class="stat-icon" style="color:var(--warning)"><i class="fas fa-clock"></i></span>
+      <span class="stat-number">${pending.length}</span>
+      <span class="stat-label">Non livrés</span>
+      <span class="stat-sub">Total ${total} véhicules</span>
+    </div>
   `;
-  pendingContainer.innerHTML = `<div class="stat-label" style="font-weight:600;">🚚 Non livrés (${pending.length})</div><div class="pending-list"><ul>${pending.map(v => `<li>${v.plaque} - ${v.societe} (${v.statut})</li>`).join('')}</ul></div>`;
-  chartContainer.innerHTML = `<h4>Répartition par statut</h4><div style="display:flex; gap:8px; flex-wrap:wrap;">${Object.entries(statusCount).map(([k,v]) => `<div style="background:#ff9800; padding:4px 12px; border-radius:20px;">${k} (${v})</div>`).join('')}</div>`;
+  statsContainer.innerHTML = statsHtml;
+
+  // Événements clic sur les cartes stats
+  document.querySelectorAll('.stat-card-clickable[data-filter]').forEach(el => {
+    el.addEventListener('click', function() {
+      const status = this.dataset.filter;
+      // Basculer vers l'onglet liste et filtrer
+      document.querySelector('[data-tab="list"]').click();
+      statusFilter.value = status;
+      statusFilter.dispatchEvent(new Event('change'));
+    });
+  });
+  document.getElementById('overdueCard').addEventListener('click', () => {
+    document.querySelector('[data-tab="list"]').click();
+    // Filtrer les véhicules en retard (pas de filtre direct, on va chercher)
+    // On applique un filtre personnalisé
+    searchInput.value = '';
+    statusFilter.value = 'all';
+    renderList();
+    // Mettre en évidence les véhicules en retard (déjà fait via le badge)
+  });
+  document.getElementById('pendingCard').addEventListener('click', () => {
+    document.querySelector('[data-tab="list"]').click();
+    statusFilter.value = 'all';
+    searchInput.value = '';
+    renderList();
+    // On affiche un message dans la console
+    alert(`🔍 ${vehicles.filter(v => v.statut !== 'Livré' && (!v.dateLivraison || v.dateLivraison === '')).length} véhicules non livrés. Utilisez le filtre pour les afficher.`);
+  });
+
+  // Graphique à barres
+  const statusBarsContainer = document.getElementById('statusBars');
+  const maxCount = Math.max(1, ...Object.values(statusCount));
+  const barColors = {
+    'Réceptionné': 'orange',
+    'Diagnostic en cours': 'blue',
+    'Livré': 'green'
+  };
+  let barsHtml = '';
+  for (const [status, count] of Object.entries(statusCount)) {
+    const pct = maxCount > 0 ? (count / maxCount * 100) : 0;
+    const color = barColors[status] || 'purple';
+    barsHtml += `
+      <div class="chart-bar-row">
+        <span class="chart-bar-label">${status}</span>
+        <div class="chart-bar-track">
+          <div class="chart-bar-fill ${color}" style="width:${Math.max(10, pct)}%;">
+            ${count}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  statusBarsContainer.innerHTML = barsHtml;
+
+  // Dernières activités (historique des 5 dernières actions)
+  const activityContainer = document.getElementById('recentActivity');
+  const allHistory = [];
+  vehicles.forEach(v => {
+    if (v.history) {
+      v.history.forEach(h => {
+        allHistory.push({ ...h, plaque: v.plaque, societe: v.societe });
+      });
+    }
+  });
+  allHistory.sort((a,b) => new Date(b.date) - new Date(a.date));
+  const recent = allHistory.slice(0, 8);
+  let activityHtml = '';
+  if (recent.length) {
+    recent.forEach(h => {
+      const date = h.date?.split(' ')[0] || '';
+      activityHtml += `
+        <div class="item">
+          <span class="date">${date}</span>
+          <span class="label">${escapeHtml(h.plaque)} - ${escapeHtml(h.action)}</span>
+        </div>
+      `;
+    });
+  } else {
+    activityHtml = '<div class="item"><span class="label">Aucune activité récente</span></div>';
+  }
+  activityContainer.innerHTML = activityHtml;
+
+  // Actions rapides
+  document.querySelectorAll('#quickActions .btn[data-filter]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const filter = this.dataset.filter;
+      document.querySelector('[data-tab="list"]').click();
+      statusFilter.value = filter;
+      statusFilter.dispatchEvent(new Event('change'));
+    });
+  });
+  document.getElementById('viewOverdueBtn').addEventListener('click', () => {
+    document.querySelector('[data-tab="list"]').click();
+    searchInput.value = '';
+    statusFilter.value = 'all';
+    renderList();
+    // On va mettre en surbrillance les véhicules en retard via un message
+    const overdueList = vehicles.filter(v => isOverdue(v));
+    if (overdueList.length) {
+      alert(`🔴 ${overdueList.length} véhicules en retard (plus de 7 jours).\n${overdueList.map(v => `- ${v.plaque} (${v.statut})`).join('\n')}`);
+    } else {
+      alert('✅ Aucun véhicule en retard.');
+    }
+  });
 }
 
-// ---------- ONGLETS ----------
+// ---------- GESTION ONGLETS ----------
 document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', function() {
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    document.getElementById('tabList').style.display = tab === 'list' ? 'flex' : 'none';
-    document.getElementById('tabDashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
-    if (tab === 'dashboard') renderDashboard();
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    const target = document.getElementById('tab-' + this.dataset.tab);
+    if (target) target.classList.add('active');
+    if (this.dataset.tab === 'dashboard') {
+      renderDashboard();
+    }
   });
 });
 
@@ -728,9 +1300,6 @@ if (!loadFromStorage()) {
   save();
 }
 renderList();
-
-// Pour déboguer
-console.log('Véhicules chargés:', vehicles.length);
 </script>
 </body>
 </html>
