@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>NTR HUB </title>
+  <title>NTR HUB</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -43,7 +43,6 @@
       min-height:100vh;
     }
 
-    /* ========== SCROLLBAR PERSONNALISÉE ========== */
     ::-webkit-scrollbar { width:6px; height:6px; }
     ::-webkit-scrollbar-track { background:var(--bg-secondary); border-radius:10px; }
     ::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
@@ -83,7 +82,6 @@
       align-items:center;
     }
 
-    /* ========== BOUTONS ========== */
     .btn {
       padding:0.5rem 1rem;
       border-radius:8px;
@@ -135,7 +133,6 @@
     .btn-sm { padding:0.3rem 0.7rem; font-size:0.75rem; }
     .btn-icon { padding:0.4rem 0.6rem; }
 
-    /* ========== TABS ========== */
     .tabs {
       display:flex;
       gap:0.2rem;
@@ -156,12 +153,8 @@
       border-radius:0;
     }
     .tab:hover { color:var(--text-primary); }
-    .tab.active {
-      color:var(--accent-blue);
-      border-bottom-color:var(--accent-blue);
-    }
+    .tab.active { color:var(--accent-blue); border-bottom-color:var(--accent-blue); }
 
-    /* ========== DASHBOARD LAYOUT ========== */
     .dashboard {
       display:flex;
       flex-wrap:wrap;
@@ -183,7 +176,6 @@
     .panel-detail { flex:3; min-width:320px; height:calc(100vh - 130px); }
     .panel-dashboard { width:100%; padding:1.5rem; }
 
-    /* ========== SEARCH ========== */
     .search {
       display:flex;
       gap:0.5rem;
@@ -208,7 +200,6 @@
     }
     .search input::placeholder { color:var(--text-muted); }
 
-    /* ========== VEHICLES LIST ========== */
     .vehicles { display:flex; flex-direction:column; gap:0.6rem; }
     .card {
       background:var(--bg-secondary);
@@ -267,7 +258,6 @@
     }
     .badge-photo { color:var(--accent-blue); border-color:rgba(88,166,255,0.2); }
 
-    /* ========== FORM ========== */
     .form-group { margin-bottom:1rem; }
     .form-group label {
       font-weight:500;
@@ -297,7 +287,6 @@
     .row { display:flex; gap:1rem; flex-wrap:wrap; }
     .row .form-group { flex:1; margin-bottom:0; }
 
-    /* ========== CHECKBOXES ========== */
     .checkbox-group {
       display:flex;
       flex-wrap:wrap;
@@ -320,7 +309,6 @@
       cursor:pointer;
     }
 
-    /* ========== PHOTOS ========== */
     .photo-gallery {
       display:grid;
       grid-template-columns:repeat(auto-fill, minmax(90px,1fr));
@@ -367,7 +355,6 @@
     .photo-item .photo-actions .del:hover { background:rgba(248,81,73,0.2); }
     .photo-item .photo-actions .download { color:var(--accent-blue); }
 
-    /* ========== LIGHTBOX ========== */
     .lightbox {
       display:none;
       position:fixed;
@@ -416,7 +403,6 @@
     .lightbox .lb-prev { left:1.2rem; }
     .lightbox .lb-next { right:1.2rem; }
 
-    /* ========== TIMELINE ========== */
     .timeline {
       max-height:150px;
       overflow-y:auto;
@@ -432,7 +418,6 @@
     .timeline-item .date { color:var(--text-muted); min-width:100px; font-size:0.7rem; }
     .timeline-item .action { flex:1; color:var(--text-secondary); }
 
-    /* ========== LOCATION BUTTONS ========== */
     .location-buttons {
       display:flex;
       gap:0.4rem;
@@ -452,7 +437,6 @@
       color:var(--text-primary);
     }
 
-    /* ========== TABLEAU DE BORD ========== */
     .dashboard-stats {
       display:grid;
       grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
@@ -566,7 +550,6 @@
     }
     .dashboard-actions .btn { flex:1; min-width:130px; justify-content:center; }
 
-    /* ========== STATUS DOT ========== */
     .status-dot {
       display:inline-block;
       width:8px;
@@ -579,7 +562,6 @@
     .status-dot.diagnostic { background:var(--accent-blue); }
     .status-dot.livre { background:var(--success); }
 
-    /* ========== PLACEHOLDER ========== */
     .placeholder {
       text-align:center;
       margin-top:2rem;
@@ -588,7 +570,6 @@
     }
     .placeholder i { font-size:2rem; display:block; margin-bottom:0.5rem; opacity:0.4; }
 
-    /* ========== MODAL ========== */
     .modal {
       display:none;
       position:fixed;
@@ -639,7 +620,16 @@
       flex-wrap:wrap;
     }
 
-    /* ========== RESPONSIVE ========== */
+    .import-summary {
+      background:var(--bg-secondary);
+      border-radius:var(--radius);
+      padding:0.8rem;
+      margin-top:0.8rem;
+      border:1px solid var(--border);
+    }
+    .import-summary .summary-title { font-weight:600; font-size:0.85rem; color:var(--text-primary); }
+    .import-summary .summary-detail { font-size:0.8rem; color:var(--text-secondary); margin-top:0.2rem; }
+
     @media(max-width:768px){
       header { padding:0.6rem 1rem; }
       header h1 { font-size:1rem; }
@@ -659,7 +649,6 @@
       .header-actions .btn { font-size:0.7rem; padding:0.3rem 0.6rem; }
     }
 
-    /* ========== MISE EN PAGE DU DÉTAIL ========== */
     .detail-header {
       display:flex;
       justify-content:space-between;
@@ -684,7 +673,7 @@
 </head>
 <body>
 <header>
-  <h1><i class="fas fa-truck-moving"></i> NTR HUB <span>Pro</span></h1>
+  <h1><i class="fas fa-truck-moving"></i> NTR HUB<span>Pro</span></h1>
   <div class="header-actions">
     <button id="excelBtn" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Excel</button>
     <button id="pdfBtn" class="btn btn-danger btn-sm"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -770,8 +759,15 @@
 <div id="importModal" class="modal">
   <div class="modal-content">
     <button class="close">&times;</button>
-    <h2 style="margin-bottom:1rem;">Importer un fichier Excel</h2>
-    <p style="color:var(--text-secondary); margin-bottom:0.8rem;">Sélectionnez un fichier .xlsx ou .xls</p>
+    <h2 style="margin-bottom:0.5rem;">Importer un fichier Excel</h2>
+    <p style="color:var(--text-secondary); margin-bottom:0.5rem; font-size:0.85rem;">
+      <i class="fas fa-info-circle"></i> Les véhicules seront <strong>ajoutés</strong> à la liste existante. 
+      Les doublons (même plaque) seront ignorés.
+    </p>
+    <div id="importSummary" class="import-summary" style="display:none;">
+      <div class="summary-title">📊 Résumé de l'import</div>
+      <div class="summary-detail" id="importSummaryDetail"></div>
+    </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; background:var(--bg-input); color:var(--text-primary); margin-bottom:0.8rem;">
     <button id="importConfirmBtn" class="btn btn-primary" style="width:100%; justify-content:center;">Importer</button>
   </div>
@@ -785,10 +781,9 @@
   <button class="lb-nav lb-next" onclick="navigateLightbox(1)">&#10095;</button>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /************************************************************
- *  SAV FLEET MANAGER PRO - INTERFACE SOBRE & ÉLÉGANTE      *
+ *  SAV FLEET MANAGER PRO - IMPORT AVEC AJOUT               *
  ************************************************************/
 
 // ---------- CONFIG ----------
@@ -1410,7 +1405,7 @@ function restoreJSON() {
   input.click();
 }
 
-// ---------- IMPORT EXCEL ----------
+// ---------- IMPORT EXCEL AVEC AJOUT ----------
 function importExcel(file) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -1419,8 +1414,15 @@ function importExcel(file) {
       const workbook = XLSX.read(data, { type:'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
-      if (!json.length) { alert('Fichier vide'); return; }
+      if (!json.length) { 
+        alert('❌ Le fichier est vide.'); 
+        return; 
+      }
+
+      // Compteurs
       let imported = 0;
+      let duplicates = 0;
+      const existingPlates = new Set(vehicles.map(v => v.plaque.toLowerCase()));
 
       const map = {
         societe: 'Client',
@@ -1455,6 +1457,13 @@ function importExcel(file) {
         const plaque = get('plaque')?.toString().trim() || '';
         if (!plaque) return;
 
+        // Vérifier les doublons
+        const plaqueKey = plaque.toUpperCase();
+        if (existingPlates.has(plaqueKey)) {
+          duplicates++;
+          return;
+        }
+
         const v = newVehicle(plaque, 'BNETD', '');
         v.societe = get('societe')?.toString().trim() || 'BNETD';
         v.marque = get('marque')?.toString().trim() || '';
@@ -1478,18 +1487,35 @@ function importExcel(file) {
         if (v.positionGeo) updateLocationHistory(v.positionGeo);
 
         vehicles.push(v);
+        existingPlates.add(plaqueKey);
         imported++;
       });
 
-      if (imported) {
+      // Affichage du résumé
+      const summaryDiv = document.getElementById('importSummary');
+      const summaryDetail = document.getElementById('importSummaryDetail');
+      summaryDiv.style.display = 'block';
+      summaryDetail.innerHTML = `
+        ✅ <strong>${imported}</strong> véhicule${imported > 1 ? 's' : ''} importé${imported > 1 ? 's' : ''}<br>
+        ${duplicates > 0 ? `⚠️ <strong>${duplicates}</strong> doublon${duplicates > 1 ? 's' : ''} ignoré${duplicates > 1 ? 's' : ''} (plaque déjà existante)` : '✅ Aucun doublon détecté'}<br>
+        📦 Total des véhicules : <strong>${vehicles.length}</strong>
+      `;
+
+      if (imported > 0) {
         save();
         renderList();
-        alert(`${imported} véhicules importés.`);
+        // Recharger le tableau de bord si on y est
+        if (document.querySelector('.tab.active').dataset.tab === 'dashboard') {
+          renderDashboard();
+        }
+        alert(`✅ ${imported} véhicules ajoutés avec succès !\n${duplicates > 0 ? `⚠️ ${duplicates} doublons ignorés.` : ''}`);
+      } else if (duplicates > 0 && imported === 0) {
+        alert(`⚠️ Aucun nouveau véhicule importé.\n${duplicates} doublon${duplicates > 1 ? 's' : ''} détecté${duplicates > 1 ? 's' : ''} (plaque déjà existante).`);
       } else {
-        alert('Aucun véhicule importé.');
+        alert('❌ Aucun véhicule n\'a pu être importé. Vérifiez le format du fichier.');
       }
     } catch(err) {
-      alert('Erreur : ' + err.message);
+      alert('❌ Erreur lors de la lecture : ' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
@@ -1545,7 +1571,6 @@ function renderDashboard() {
   `;
   document.getElementById('statsContainer').innerHTML = statsHtml;
 
-  // Lieux
   const locationMap = {};
   vehicles.forEach(v => {
     const loc = v.positionGeo || 'Non défini';
@@ -1567,7 +1592,6 @@ function renderDashboard() {
   });
   locationGrid.innerHTML = locHtml || '<div class="placeholder" style="grid-column:1/-1;"><p>Aucun lieu enregistré</p></div>';
 
-  // Statuts bars
   const statusBarsContainer = document.getElementById('statusBars');
   const maxCount = Math.max(1, ...Object.values(statusCount));
   const barColors = { 'Réceptionné': 'orange', 'Diagnostic en cours': 'blue', 'Livré': 'green' };
@@ -1586,7 +1610,6 @@ function renderDashboard() {
   }
   statusBarsContainer.innerHTML = barsHtml;
 
-  // Activités
   const activityContainer = document.getElementById('recentActivity');
   const allHistory = [];
   vehicles.forEach(v => {
@@ -1609,7 +1632,6 @@ function renderDashboard() {
   }
   activityContainer.innerHTML = activityHtml;
 
-  // Événements
   document.querySelectorAll('.stat-card[data-filter]').forEach(el => {
     el.addEventListener('click', function() {
       document.querySelector('[data-tab="list"]').click();
@@ -1695,14 +1717,19 @@ document.getElementById('excelBtn').addEventListener('click', exportExcel);
 document.getElementById('pdfBtn').addEventListener('click', exportPdf);
 document.getElementById('backupBtn').addEventListener('click', backupJSON);
 document.getElementById('restoreBtn').addEventListener('click', restoreJSON);
-document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importModal').style.display='flex');
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importModal').style.display='flex';
+  // Réinitialiser le résumé
+  document.getElementById('importSummary').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+});
 document.querySelector('#importModal .close').addEventListener('click', () => document.getElementById('importModal').style.display='none');
 document.getElementById('importConfirmBtn').addEventListener('click', () => {
   const fileInput = document.getElementById('fileInput');
   if (!fileInput.files.length) { alert('Sélectionnez un fichier'); return; }
   importExcel(fileInput.files[0]);
-  document.getElementById('importModal').style.display='none';
-  fileInput.value = '';
+  // Ne pas fermer la modale pour voir le résumé
+  // On laisse l'utilisateur la fermer manuellement
 });
 
 searchInput.addEventListener('input', renderList);
