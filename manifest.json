@@ -1,21 +1,25 @@
 {
-  "name": "NTR Garage Manager",
-  "short_name": "NTR-Garage",
-  "start_url": ".",
+  "name": "Suivi BNETD - Gestion véhicules",
+  "short_name": "Suivi BNETD",
+  "description": "Application de suivi des véhicules BNETD",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1e3c72",
-  "theme_color": "#ff9800",
-  "description": "Gestion des véhicules BNETD et clients spéciaux",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "lang": "fr",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192?text=NTR",
+      "src": "android-chrome-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://via.placeholder.com/512?text=NTR",
+      "src": "android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
